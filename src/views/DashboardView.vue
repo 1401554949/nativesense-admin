@@ -1,7 +1,7 @@
 <template>
   <div class="dashboard">
     <h1 class="page-title">仪表盘</h1>
-    
+
     <!-- 统计卡片 -->
     <el-row :gutter="20" class="stats-cards">
       <el-col :xs="24" :sm="12" :md="6">
@@ -17,7 +17,7 @@
           </div>
         </el-card>
       </el-col>
-      
+
       <el-col :xs="24" :sm="12" :md="6">
         <el-card class="stat-card">
           <div class="stat-content">
@@ -31,7 +31,7 @@
           </div>
         </el-card>
       </el-col>
-      
+
       <el-col :xs="24" :sm="12" :md="6">
         <el-card class="stat-card">
           <div class="stat-content">
@@ -45,7 +45,7 @@
           </div>
         </el-card>
       </el-col>
-      
+
       <el-col :xs="24" :sm="12" :md="6">
         <el-card class="stat-card">
           <div class="stat-content">
@@ -60,7 +60,7 @@
         </el-card>
       </el-col>
     </el-row>
-    
+
     <!-- 最近上传 -->
     <el-row :gutter="20" class="recent-uploads">
       <el-col :xs="24" :lg="12">
@@ -68,24 +68,18 @@
           <template #header>
             <div class="card-header">
               <span>最近上传的视频</span>
-              <el-button type="text" @click="$router.push('/video/list')">
-                查看更多
-              </el-button>
+              <el-button type="text" @click="$router.push('/video/list')"> 查看更多 </el-button>
             </div>
           </template>
-          
+
           <div v-if="recentVideos.length === 0" class="empty-state">
             <el-empty description="暂无视频" />
           </div>
-          
+
           <div v-else class="media-list">
-            <div
-              v-for="video in recentVideos"
-              :key="video.id"
-              class="media-item"
-            >
+            <div v-for="video in recentVideos" :key="video.id" class="media-item">
               <div class="media-thumbnail">
-                <img v-if="video.thumbnail" :src="video.thumbnail" alt="">
+                <img v-if="video.thumbnail" :src="video.thumbnail" alt="" />
                 <el-icon v-else class="default-icon"><VideoPlay /></el-icon>
               </div>
               <div class="media-info">
@@ -96,28 +90,22 @@
           </div>
         </el-card>
       </el-col>
-      
+
       <el-col :xs="24" :lg="12">
         <el-card>
           <template #header>
             <div class="card-header">
               <span>最近上传的音频</span>
-              <el-button type="text" @click="$router.push('/audio/list')">
-                查看更多
-              </el-button>
+              <el-button type="text" @click="$router.push('/audio/list')"> 查看更多 </el-button>
             </div>
           </template>
-          
+
           <div v-if="recentAudios.length === 0" class="empty-state">
             <el-empty description="暂无音频" />
           </div>
-          
+
           <div v-else class="media-list">
-            <div
-              v-for="audio in recentAudios"
-              :key="audio.id"
-              class="media-item"
-            >
+            <div v-for="audio in recentAudios" :key="audio.id" class="media-item">
               <div class="media-thumbnail">
                 <el-icon class="default-icon"><Headset /></el-icon>
               </div>
@@ -149,7 +137,7 @@ const stats = ref<DashboardStats>({
   videoCount: 0,
   audioCount: 0,
   totalSize: 0,
-  userCount: 0
+  userCount: 0,
 })
 
 const recentVideos = ref<MediaFile[]>([])
@@ -170,7 +158,7 @@ const formatDate = (dateStr: string): string => {
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
   })
 }
 
@@ -182,9 +170,9 @@ const loadDashboardData = async () => {
       videoCount: 156,
       audioCount: 89,
       totalSize: 1024 * 1024 * 1024 * 2.5, // 2.5GB
-      userCount: 23
+      userCount: 23,
     }
-    
+
     // 模拟最近上传的文件
     recentVideos.value = [
       {
@@ -195,7 +183,7 @@ const loadDashboardData = async () => {
         format: 'mp4',
         thumbnail: '',
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       },
       {
         id: 2,
@@ -205,10 +193,10 @@ const loadDashboardData = async () => {
         format: 'mp4',
         thumbnail: '',
         createdAt: new Date(Date.now() - 86400000).toISOString(),
-        updatedAt: new Date(Date.now() - 86400000).toISOString()
-      }
+        updatedAt: new Date(Date.now() - 86400000).toISOString(),
+      },
     ]
-    
+
     recentAudios.value = [
       {
         id: 3,
@@ -217,7 +205,7 @@ const loadDashboardData = async () => {
         size: 1024 * 1024 * 5,
         format: 'mp3',
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       },
       {
         id: 4,
@@ -226,8 +214,8 @@ const loadDashboardData = async () => {
         size: 1024 * 1024 * 8,
         format: 'wav',
         createdAt: new Date(Date.now() - 3600000).toISOString(),
-        updatedAt: new Date(Date.now() - 3600000).toISOString()
-      }
+        updatedAt: new Date(Date.now() - 3600000).toISOString(),
+      },
     ]
   } catch (error) {
     console.error('加载仪表盘数据失败:', error)
@@ -257,8 +245,30 @@ onMounted(() => {
 }
 
 .stat-card {
-  height: 100px;
-  transition: transform 0.3s, box-shadow 0.3s;
+  background-color: #ffffff;
+  border-radius: 14px;
+  box-shadow: 6px 6px 54px rgba(0, 0, 0, 0.05);
+}
+
+.stat-icon {
+  background: #8280ff;
+  opacity: 0.21;
+}
+
+.stat-info h3 {
+  font-family: 'Nunito Sans', sans-serif;
+  font-weight: 700;
+  font-size: 28px;
+  letter-spacing: 0.035em;
+  color: #202224;
+}
+
+.stat-info p {
+  font-family: 'Nunito Sans', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  color: #202224;
+  opacity: 0.7;
 }
 
 .stat-card:hover {
@@ -317,10 +327,44 @@ onMounted(() => {
   margin-bottom: 20px;
 }
 
+:deep(.el-card__header) {
+  border-bottom: none !important;
+}
+
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.card-header:after {
+  display: none;
+}
+
+.card-header span {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.el-button--text {
+  color: #4c6fff;
+  font-weight: 500;
+}
+
+.el-button--text:hover {
+  color: #3a56e8;
+}
+.el-card {
+  border-radius: 14px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  margin-bottom: 20px;
+}
+
+.el-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .empty-state {
@@ -330,29 +374,50 @@ onMounted(() => {
 .media-list {
   max-height: 300px;
   overflow-y: auto;
+  padding: 0;
 }
 
 .media-item {
   display: flex;
   align-items: center;
-  padding: 12px 0;
-  border-bottom: 1px solid #f0f0f0;
+  padding: 16px;
+  margin-bottom: 12px;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  transition: all 0.3s ease;
 }
 
-.media-item:last-child {
-  border-bottom: none;
+.media-item:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .media-thumbnail {
-  width: 50px;
+  width: 40px;
   height: 40px;
-  border-radius: 4px;
-  background-color: #f5f7fa;
+  border-radius: 8px;
+  background-color: #e2e8f0;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 12px;
-  overflow: hidden;
+  margin-right: 16px;
+}
+
+.default-icon {
+  font-size: 20px;
+  color: #718096;
+}
+
+.media-info h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 0 0 4px 0;
+}
+
+.media-info p {
+  font-size: 12px;
+  color: #718096;
+  margin: 0;
 }
 
 .media-thumbnail img {
@@ -384,9 +449,9 @@ onMounted(() => {
   .stats-cards .el-col {
     margin-bottom: 20px;
   }
-  
+
   .recent-uploads .el-col {
     margin-bottom: 20px;
   }
 }
-</style> 
+</style>

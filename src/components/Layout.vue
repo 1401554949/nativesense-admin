@@ -6,7 +6,7 @@
         <h2 v-if="!isCollapse" class="logo">NativeSense</h2>
         <h2 v-else class="logo-mini">NS</h2>
       </div>
-      
+
       <el-menu
         :default-active="activeMenu"
         :collapse="isCollapse"
@@ -21,7 +21,7 @@
           <el-icon><House /></el-icon>
           <template #title>仪表盘</template>
         </el-menu-item>
-        
+
         <el-sub-menu index="video">
           <template #title>
             <el-icon><VideoPlay /></el-icon>
@@ -30,7 +30,7 @@
           <el-menu-item index="/video/list">视频列表</el-menu-item>
           <el-menu-item index="/video/upload">上传视频</el-menu-item>
         </el-sub-menu>
-        
+
         <el-sub-menu index="audio">
           <template #title>
             <el-icon><Headset /></el-icon>
@@ -41,31 +41,23 @@
         </el-sub-menu>
       </el-menu>
     </el-aside>
-    
+
     <!-- 主内容区 -->
     <el-container>
       <!-- 头部 -->
       <el-header class="header">
         <div class="header-left">
-          <el-button
-            type="text"
-            @click="toggleSidebar"
-            class="collapse-btn"
-          >
+          <el-button type="text" @click="toggleSidebar" class="collapse-btn">
             <el-icon><Fold v-if="!isCollapse" /><Expand v-else /></el-icon>
           </el-button>
-          
+
           <el-breadcrumb separator="/">
-            <el-breadcrumb-item
-              v-for="item in breadcrumbs"
-              :key="item.path"
-              :to="item.path"
-            >
+            <el-breadcrumb-item v-for="item in breadcrumbs" :key="item.path" :to="item.path">
               {{ item.title }}
             </el-breadcrumb-item>
           </el-breadcrumb>
         </div>
-        
+
         <div class="header-right">
           <el-dropdown @command="handleUserCommand">
             <div class="user-info">
@@ -75,7 +67,7 @@
               <span class="username">{{ userStore.userInfo?.username || '演示用户' }}</span>
               <el-icon class="el-icon--right"><ArrowDown /></el-icon>
             </div>
-            
+
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item command="profile">个人资料</el-dropdown-item>
@@ -86,7 +78,7 @@
           </el-dropdown>
         </div>
       </el-header>
-      
+
       <!-- 主体内容 -->
       <el-main class="main-content">
         <router-view />
@@ -99,15 +91,7 @@
 import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import {
-  House,
-  VideoPlay,
-  Headset,
-  Fold,
-  Expand,
-  User,
-  ArrowDown
-} from '@element-plus/icons-vue'
+import { House, VideoPlay, Headset, Fold, Expand, User, ArrowDown } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const userStore = useUserStore()
@@ -117,10 +101,10 @@ const isCollapse = ref(false)
 const activeMenu = computed(() => route.path)
 
 const breadcrumbs = computed(() => {
-  const matched = route.matched.filter(item => item.meta && item.meta.title)
-  return matched.map(item => ({
+  const matched = route.matched.filter((item) => item.meta && item.meta.title)
+  return matched.map((item) => ({
     path: item.path,
-    title: item.meta.title
+    title: item.meta.title,
   }))
 })
 
@@ -150,7 +134,7 @@ watch(
       userStore.fetchUserInfo()
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 </script>
 
@@ -160,23 +144,43 @@ watch(
 }
 
 .sidebar {
-  background-color: #304156;
-  transition: width 0.3s;
+  background-color: #ffffff;
 }
 
-.sidebar-header {
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-bottom: 1px solid #464c5b;
-}
-
-.logo {
-  color: #fff;
-  font-size: 18px;
-  font-weight: bold;
+.sidebar-menu .el-menu-item {
+  height: 50px;
   margin: 0;
+  background-color: #ffffff;
+  color: #202224;
+  font-family: 'Nunito Sans', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+}
+
+.sidebar-menu .el-menu-item:hover {
+  background-color: #e1f5fe;
+}
+
+.sidebar-menu .el-menu-item.is-active {
+  background-color: #ffffff !important;
+  color: #4880ff !important;
+  border-left: 4px solid #4880ff;
+  padding-left: 16px !important;
+}
+
+.sidebar-menu .el-menu-item {
+  background-color: #ffffff;
+}
+
+.sidebar-menu .el-sub-menu .el-sub-menu__title {
+  background-color: #ffffff;
+  color: #202224;
+}
+
+.sidebar-menu .el-sub-menu.is-active .el-sub-menu__title {
+  background-color: #f0f7ff;
+  color: #4880ff;
 }
 
 .logo-mini {
@@ -233,4 +237,4 @@ watch(
   background-color: #f0f2f5;
   padding: 20px;
 }
-</style> 
+</style>
