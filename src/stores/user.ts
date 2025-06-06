@@ -9,6 +9,7 @@ export const useUserStore = defineStore('user', () => {
   const userInfo = ref<LoginResponse['userInfo'] | null>(null)
   const loading = ref(false)
 
+  // 【禁用登录功能期间】设置为始终已登录状态
   const isLogin = computed(() => !!token.value)
 
   // 登录

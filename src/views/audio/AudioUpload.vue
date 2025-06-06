@@ -64,7 +64,7 @@
         >
           <div class="file-info">
             <div class="file-icon">
-              <el-icon><Headphone /></el-icon>
+              <el-icon><Headset /></el-icon>
             </div>
             <div class="file-details">
               <p class="file-name">{{ file.name }}</p>
@@ -104,7 +104,7 @@
           class="success-item"
         >
           <div class="file-icon">
-            <el-icon><Headphone /></el-icon>
+            <el-icon><Headset /></el-icon>
           </div>
           <div class="file-info">
             <h4>{{ file.name }}</h4>
@@ -129,7 +129,7 @@
       <div v-if="currentAudio" class="play-content">
         <div class="audio-info">
           <div class="audio-cover">
-            <el-icon class="cover-icon"><Headphone /></el-icon>
+            <el-icon class="cover-icon"><Headset /></el-icon>
           </div>
           <div class="audio-details">
             <h3>{{ currentAudio.name }}</h3>
@@ -154,7 +154,7 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, Upload, Headphone } from '@element-plus/icons-vue'
+import { ArrowLeft, Upload, Headset } from '@element-plus/icons-vue'
 import { uploadAudioApi, type MediaFile } from '@/api/media'
 import type { UploadFile, UploadFiles, UploadInstance } from 'element-plus'
 

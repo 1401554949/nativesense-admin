@@ -38,7 +38,7 @@
         <el-table-column label="图标" width="80">
           <template #default>
             <div class="audio-icon">
-              <el-icon class="icon"><Headphone /></el-icon>
+              <el-icon class="icon"><Headset /></el-icon>
             </div>
           </template>
         </el-table-column>
@@ -113,7 +113,7 @@
       <div v-if="currentAudio" class="play-content">
         <div class="audio-info">
           <div class="audio-cover">
-            <el-icon class="cover-icon"><Headphone /></el-icon>
+            <el-icon class="cover-icon"><Headset /></el-icon>
           </div>
           <div class="audio-details">
             <h3>{{ currentAudio.name }}</h3>
@@ -160,7 +160,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Headphone } from '@element-plus/icons-vue'
+import { Plus, Headset } from '@element-plus/icons-vue'
 import { getAudioListApi, deleteAudioApi, type MediaFile } from '@/api/media'
 
 const loading = ref(false)

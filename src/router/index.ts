@@ -20,7 +20,7 @@ const router = createRouter({
       component: () => import('@/components/Layout.vue'),
       redirect: '/dashboard',
       meta: { 
-        requireAuth: true 
+        requireAuth: false 
       },
       children: [
         {
@@ -29,7 +29,7 @@ const router = createRouter({
           component: () => import('@/views/DashboardView.vue'),
           meta: { 
             title: '仪表盘',
-            requireAuth: true 
+            requireAuth: false 
           }
         },
         {
@@ -38,7 +38,7 @@ const router = createRouter({
           redirect: '/video/list',
           meta: { 
             title: '视频管理',
-            requireAuth: true 
+            requireAuth: false 
           },
           children: [
             {
@@ -47,7 +47,7 @@ const router = createRouter({
               component: () => import('@/views/video/VideoList.vue'),
               meta: { 
                 title: '视频列表',
-                requireAuth: true 
+                requireAuth: false 
               }
             },
             {
@@ -56,7 +56,7 @@ const router = createRouter({
               component: () => import('@/views/video/VideoUpload.vue'),
               meta: { 
                 title: '上传视频',
-                requireAuth: true 
+                requireAuth: false 
               }
             }
           ]
@@ -67,7 +67,7 @@ const router = createRouter({
           redirect: '/audio/list',
           meta: { 
             title: '音频管理',
-            requireAuth: true 
+            requireAuth: false 
           },
           children: [
             {
@@ -76,7 +76,7 @@ const router = createRouter({
               component: () => import('@/views/audio/AudioList.vue'),
               meta: { 
                 title: '音频列表',
-                requireAuth: true 
+                requireAuth: false 
               }
             },
             {
@@ -85,7 +85,7 @@ const router = createRouter({
               component: () => import('@/views/audio/AudioUpload.vue'),
               meta: { 
                 title: '上传音频',
-                requireAuth: true 
+                requireAuth: false 
               }
             }
           ]

@@ -88,11 +88,11 @@ const handleLogin = async () => {
   if (!loginFormRef.value) return
   
   try {
-    await loginFormRef.value.validate()
-    await userStore.login(loginForm)
+    // await loginFormRef.value.validate()
+    // await userStore.login(loginForm)
     
     ElMessage.success('登录成功')
-    router.push('/')
+    router.push('/video')
   } catch (error) {
     console.error('登录失败:', error)
   }

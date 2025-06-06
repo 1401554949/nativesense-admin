@@ -33,7 +33,7 @@
         
         <el-sub-menu index="audio">
           <template #title>
-            <el-icon><Headphone /></el-icon>
+            <el-icon><Headset /></el-icon>
             <span>音频管理</span>
           </template>
           <el-menu-item index="/audio/list">音频列表</el-menu-item>
@@ -72,7 +72,7 @@
               <el-avatar :size="32" :src="userStore.userInfo?.avatar">
                 <el-icon><User /></el-icon>
               </el-avatar>
-              <span class="username">{{ userStore.userInfo?.username }}</span>
+              <span class="username">{{ userStore.userInfo?.username || '演示用户' }}</span>
               <el-icon class="el-icon--right"><ArrowDown /></el-icon>
             </div>
             
@@ -102,7 +102,7 @@ import { useUserStore } from '@/stores/user'
 import {
   House,
   VideoPlay,
-  Headphone,
+  Headset,
   Fold,
   Expand,
   User,

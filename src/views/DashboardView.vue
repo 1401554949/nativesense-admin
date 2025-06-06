@@ -22,7 +22,7 @@
         <el-card class="stat-card">
           <div class="stat-content">
             <div class="stat-icon audio-icon">
-              <el-icon><Headphone /></el-icon>
+              <el-icon><Headset /></el-icon>
             </div>
             <div class="stat-info">
               <h3>{{ stats.audioCount }}</h3>
@@ -119,7 +119,7 @@
               class="media-item"
             >
               <div class="media-thumbnail">
-                <el-icon class="default-icon"><Headphone /></el-icon>
+                <el-icon class="default-icon"><Headset /></el-icon>
               </div>
               <div class="media-info">
                 <h4>{{ audio.name }}</h4>
@@ -135,7 +135,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { VideoPlay, Headphone, FolderOpened, User } from '@element-plus/icons-vue'
+import { VideoPlay, Headset, FolderOpened, User } from '@element-plus/icons-vue'
 import type { MediaFile } from '@/api/media'
 
 interface DashboardStats {
