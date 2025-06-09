@@ -1,11 +1,11 @@
 <template>
-  <div class="video-list">
+  <div class="audio-list">
     <!-- 筛选器 -->
     <div class="filters">
       <div class="search-section">
         <el-input
           v-model="searchForm.keyword"
-          placeholder="搜索视频..."
+          placeholder="搜索音频..."
           class="search-input"
           clearable
           @keyup.enter="handleSearch"
@@ -23,9 +23,9 @@
           class="filter-select"
           clearable
         >
-          <el-option label="已发布" value="published" />
+          <el-option label="已上架" value="published" />
+          <el-option label="已下架" value="draft" />
           <el-option label="处理中" value="processing" />
-          <el-option label="草稿" value="draft" />
           <el-option label="全部" value="all" />
         </el-select>
         
@@ -43,13 +43,13 @@
       </div>
     </div>
     
-    <!-- 视频列表 -->
+    <!-- 音频列表 -->
     <div class="table-container">
       <el-table
         v-loading="loading"
-        :data="videoList"
+        :data="audioList"
         style="width: 100%"
-        class="video-table"
+        class="audio-table"
       >
         <el-table-column label="编号" width="80">
           <template #default="{ row }">
@@ -57,16 +57,23 @@
           </template>
         </el-table-column>
         
-        <el-table-column label="视频名称" min-width="250">
+        <el-table-column label="音频名称" min-width="250">
           <template #default="{ row }">
-            <div class="video-info">
-              <div class="video-thumbnail">
-                <img v-if="row.thumbnail" :src="row.thumbnail" alt="缩略图">
-                <el-icon v-else class="default-thumbnail"><VideoPlay /></el-icon>
+            <div class="audio-info">
+              <div class="audio-thumbnail">
+                <div class="audio-icon">
+                  <el-icon><Headset /></el-icon>
+                  <div class="audio-wave">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                </div>
               </div>
-              <div class="video-details">
-                <p class="video-name">{{ row.name }}</p>
-                <p class="video-format">{{ row.format.toUpperCase() }} • {{ formatFileSize(row.size) }}</p>
+              <div class="audio-details">
+                <p class="audio-name">{{ row.name }}</p>
+                <p class="audio-format">{{ row.format.toUpperCase() }} • {{ formatFileSize(row.size) }}</p>
               </div>
             </div>
           </template>
@@ -90,7 +97,7 @@
           </template>
         </el-table-column>
         
-        <el-table-column label="状态" width="100">
+        <el-table-column label="状态" width="120">
           <template #default="{ row }">
             <el-tag 
               :type="getStatusType(row.status)" 
@@ -109,7 +116,7 @@
                 size="small"
                 @click="handlePreview(row)"
               >
-                预览
+                播放
               </el-button>
               <el-button 
                 type="success" 
@@ -166,31 +173,38 @@
       >
         <el-icon size="20"><Plus /></el-icon>
       </el-button>
-      <div class="upload-fab-tooltip">上传视频</div>
+      <div class="upload-fab-tooltip">上传音频</div>
     </div>
 
     <!-- 上传对话框 -->
     <el-dialog
       v-model="showUploadDialog"
-      title="上传视频"
+      title="上传音频"
       width="600px"
       @close="resetUploadForm"
     >
       <el-form :model="uploadForm" :rules="uploadRules" ref="uploadFormRef" label-width="100px">
-        <el-form-item label="视频标题" prop="title">
-          <el-input v-model="uploadForm.title" placeholder="请输入视频标题" />
+        <el-form-item label="音频标题" prop="title">
+          <el-input v-model="uploadForm.title" placeholder="请输入音频标题" />
         </el-form-item>
         
-        <el-form-item label="视频描述" prop="description">
+        <el-form-item label="音频描述" prop="description">
           <el-input 
             v-model="uploadForm.description" 
             type="textarea" 
             :rows="3"
-            placeholder="请输入视频描述"
+            placeholder="请输入音频描述"
           />
         </el-form-item>
+
+        <el-form-item label="上架状态" prop="status">
+          <el-select v-model="uploadForm.status" style="width: 100%">
+            <el-option label="已上架" value="published" />
+            <el-option label="已下架" value="draft" />
+          </el-select>
+        </el-form-item>
         
-        <el-form-item label="视频文件" prop="file" class="file-upload-item">
+        <el-form-item label="音频文件" prop="file" class="file-upload-item">
           <div class="upload-container">
             <el-upload
               class="upload-demo"
@@ -199,7 +213,7 @@
               :auto-upload="false"
               :on-change="handleFileChange"
               :file-list="fileList"
-              accept="video/*"
+              accept="audio/*"
               :limit="1"
             >
               <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
@@ -208,24 +222,18 @@
               </div>
               <template #tip>
                 <div class="el-upload__tip">
-                  支持 MP4、AVI、MOV 等格式，文件大小不超过 100MB
+                  支持 MP3、WAV、FLAC 等格式，文件大小不超过 50MB
                 </div>
               </template>
             </el-upload>
             
             <!-- 上传进度 -->
-            <div v-if="uploadProgress > 0 && uploadProgress < 100" class="upload-progress">
-              <div class="progress-info">
-                <span class="progress-text">正在上传</span>
-                <span class="progress-percentage">{{ uploadProgress }}%</span>
-              </div>
-              <el-progress 
-                :percentage="uploadProgress" 
-                :stroke-width="6"
-                status="success"
-                :show-text="false"
-              />
-            </div>
+            <el-progress 
+              v-if="uploadProgress > 0 && uploadProgress < 100"
+              :percentage="uploadProgress" 
+              :stroke-width="8"
+              status="success"
+            />
           </div>
         </el-form-item>
       </el-form>
@@ -243,26 +251,67 @@
     <!-- 预览对话框 -->
     <el-dialog
       v-model="previewDialogVisible"
-      title="视频预览"
-      width="80%"
+      title="音频预览"
+      width="60%"
       align-center
     >
-      <div v-if="previewVideo" class="preview-content">
-        <video
-          :src="previewVideo.url"
+      <div v-if="previewAudio" class="preview-content">
+        <audio
+          :src="previewAudio.url"
           controls
-          style="width: 100%; max-height: 500px;"
+          style="width: 100%;"
         >
-          您的浏览器不支持视频播放
-        </video>
+          您的浏览器不支持音频播放
+        </audio>
         <div class="preview-info">
-          <h3>{{ previewVideo.name }}</h3>
-          <p>文件大小: {{ formatFileSize(previewVideo.size) }}</p>
-          <p>格式: {{ previewVideo.format.toUpperCase() }}</p>
-          <p v-if="previewVideo.duration">时长: {{ formatDuration(previewVideo.duration) }}</p>
-          <p>上传时间: {{ formatDate(previewVideo.createdAt) }}</p>
+          <h3>{{ previewAudio.name }}</h3>
+          <p>文件大小: {{ formatFileSize(previewAudio.size) }}</p>
+          <p>格式: {{ previewAudio.format.toUpperCase() }}</p>
+          <p v-if="previewAudio.duration">时长: {{ formatDuration(previewAudio.duration) }}</p>
+          <p v-if="previewAudio.description">描述: {{ previewAudio.description }}</p>
+          <p>上传时间: {{ formatDate(previewAudio.createdAt) }}</p>
         </div>
       </div>
+    </el-dialog>
+
+    <!-- 编辑对话框 -->
+    <el-dialog
+      v-model="editDialogVisible"
+      title="编辑音频"
+      width="600px"
+      @close="resetEditForm"
+    >
+      <el-form :model="editForm" :rules="editRules" ref="editFormRef" label-width="100px">
+        <el-form-item label="音频标题" prop="title">
+          <el-input v-model="editForm.title" placeholder="请输入音频标题" />
+        </el-form-item>
+        
+        <el-form-item label="音频描述" prop="description">
+          <el-input 
+            v-model="editForm.description" 
+            type="textarea" 
+            :rows="3"
+            placeholder="请输入音频描述"
+          />
+        </el-form-item>
+
+        <el-form-item label="上架状态" prop="status">
+          <el-select v-model="editForm.status" style="width: 100%">
+            <el-option label="已上架" value="published" />
+            <el-option label="已下架" value="draft" />
+            <el-option label="处理中" value="processing" />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="editDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="handleSaveEdit" :loading="editLoading">
+            保存
+          </el-button>
+        </span>
+      </template>
     </el-dialog>
   </div>
 </template>
@@ -270,16 +319,30 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, VideoPlay, Plus, UploadFilled } from '@element-plus/icons-vue'
-import { getVideoListApi, deleteVideoApi, type MediaFile } from '@/api/media'
+import { Search, Headset, Plus, UploadFilled } from '@element-plus/icons-vue'
+
+interface AudioFile {
+  id: number
+  name: string
+  url: string
+  size: number
+  duration?: number
+  format: string
+  status: string
+  description: string
+  createdAt: string
+  updatedAt: string
+}
 
 const loading = ref(false)
-const videoList = ref<MediaFile[]>([])
+const audioList = ref<AudioFile[]>([])
 const previewDialogVisible = ref(false)
-const previewVideo = ref<MediaFile | null>(null)
+const previewAudio = ref<AudioFile | null>(null)
 const showUploadDialog = ref(false)
 const uploading = ref(false)
 const uploadProgress = ref(0)
+const editDialogVisible = ref(false)
+const editLoading = ref(false)
 
 const searchForm = reactive({
   keyword: ''
@@ -300,17 +363,33 @@ const pagination = reactive({
 const uploadForm = reactive({
   title: '',
   description: '',
+  status: 'published',
   file: null
 })
 
 const uploadRules = {
   title: [
-    { required: true, message: '请输入视频标题', trigger: 'blur' }
+    { required: true, message: '请输入音频标题', trigger: 'blur' }
+  ]
+}
+
+// 编辑表单
+const editForm = reactive({
+  id: 0,
+  title: '',
+  description: '',
+  status: 'published'
+})
+
+const editRules = {
+  title: [
+    { required: true, message: '请输入音频标题', trigger: 'blur' }
   ]
 }
 
 const fileList = ref([])
 const uploadFormRef = ref()
+const editFormRef = ref()
 
 const formatFileSize = (size: number): string => {
   if (size === 0) return '0 B'
@@ -358,90 +437,85 @@ const getStatusType = (status: string): string => {
 
 const getStatusLabel = (status: string): string => {
   switch (status) {
-    case 'published': return '已发布'
+    case 'published': return '已上架'
     case 'processing': return '处理中'
-    case 'draft': return '草稿'
+    case 'draft': return '已下架'
     default: return '待处理'
   }
 }
 
-const loadVideoList = async () => {
+const loadAudioList = async () => {
   loading.value = true
   try {
-    const response = await getVideoListApi({
-      page: pagination.page,
-      pageSize: pagination.pageSize,
-      keyword: searchForm.keyword
-    })
+    // 模拟API调用
+    await new Promise(resolve => setTimeout(resolve, 500))
     
-    videoList.value = response.list
-    pagination.total = response.total
-  } catch (error) {
-    console.error('加载视频列表失败:', error)
-    // 模拟数据
-    videoList.value = [
+    audioList.value = [
       {
-        id: 1001,
-        name: '产品宣传片',
-        url: '/mock/video1.mp4',
-        size: 1024 * 1024 * 85,
-        duration: 180,
-        format: 'mp4',
-        thumbnail: '/mock/thumbnail1.jpg',
+        id: 2001,
+        name: '办公室轻音乐',
+        url: '/mock/audio1.mp3',
+        size: 1024 * 1024 * 8,
+        duration: 225,
+        format: 'mp3',
         status: 'published',
+        description: '适合办公环境的轻松背景音乐，能够提升工作效率和心情',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       },
       {
-        id: 1002,
-        name: '企业培训视频',
-        url: '/mock/video2.mp4',
-        size: 1024 * 1024 * 120,
-        duration: 1200,
-        format: 'mp4',
-        thumbnail: '/mock/thumbnail2.jpg',
+        id: 2002,
+        name: '系统提示音效包',
+        url: '/mock/audio2.wav',
+        size: 1024 * 1024 * 3,
+        duration: 80,
+        format: 'wav',
         status: 'processing',
+        description: '包含多种系统提示音效，适用于软件界面交互',
         createdAt: new Date(Date.now() - 86400000).toISOString(),
         updatedAt: new Date(Date.now() - 86400000).toISOString()
       },
       {
-        id: 1003,
-        name: '新品发布会',
-        url: '/mock/video3.mp4',
-        size: 1024 * 1024 * 150,
-        duration: 1800,
-        format: 'mp4',
-        thumbnail: '/mock/thumbnail3.jpg',
+        id: 2003,
+        name: '企业宣传语音',
+        url: '/mock/audio3.mp3',
+        size: 1024 * 1024 * 12,
+        duration: 300,
+        format: 'mp3',
         status: 'published',
+        description: '专业录制的企业宣传配音，适用于公司介绍视频',
         createdAt: new Date(Date.now() - 172800000).toISOString(),
         updatedAt: new Date(Date.now() - 172800000).toISOString()
       },
       {
-        id: 1004,
-        name: '客户案例分享',
-        url: '/mock/video4.mp4',
-        size: 1024 * 1024 * 95,
-        duration: 900,
-        format: 'mp4',
-        thumbnail: '',
+        id: 2004,
+        name: '科技播客节目',
+        url: '/mock/audio4.mp3',
+        size: 1024 * 1024 * 45,
+        duration: 1530,
+        format: 'mp3',
         status: 'draft',
+        description: '讨论最新科技趋势的播客节目录音',
         createdAt: new Date(Date.now() - 259200000).toISOString(),
         updatedAt: new Date(Date.now() - 259200000).toISOString()
       },
       {
-        id: 1005,
-        name: '技术教程演示',
-        url: '/mock/video5.mp4',
-        size: 1024 * 1024 * 75,
-        duration: 720,
-        format: 'mp4',
-        thumbnail: '/mock/thumbnail5.jpg',
+        id: 2005,
+        name: '冥想放松音乐',
+        url: '/mock/audio5.mp3',
+        size: 1024 * 1024 * 20,
+        duration: 510,
+        format: 'mp3',
         status: 'published',
+        description: '舒缓的冥想音乐，帮助放松身心和缓解压力',
         createdAt: new Date(Date.now() - 345600000).toISOString(),
         updatedAt: new Date(Date.now() - 345600000).toISOString()
       }
     ]
     pagination.total = 50
+  } catch (error) {
+    console.error('加载音频列表失败:', error)
+    ElMessage.error('加载失败')
   } finally {
     loading.value = false
   }
@@ -449,51 +523,59 @@ const loadVideoList = async () => {
 
 const handleSearch = () => {
   pagination.page = 1
-  loadVideoList()
+  loadAudioList()
 }
 
 const handleSizeChange = (size: number) => {
   pagination.pageSize = size
   pagination.page = 1
-  loadVideoList()
+  loadAudioList()
 }
 
 const handleCurrentChange = (page: number) => {
   pagination.page = page
-  loadVideoList()
+  loadAudioList()
 }
 
-const handlePreview = (video: MediaFile) => {
-  previewVideo.value = video
+const handlePreview = (audio: AudioFile) => {
+  previewAudio.value = audio
   previewDialogVisible.value = true
 }
 
-const handleEdit = (video: MediaFile) => {
-  ElMessage.info('编辑功能待开发')
+const handleEdit = (audio: AudioFile) => {
+  editForm.id = audio.id
+  editForm.title = audio.name
+  editForm.description = audio.description
+  editForm.status = audio.status
+  editDialogVisible.value = true
 }
 
-const handleDownload = (video: MediaFile) => {
+const handleDownload = (audio: AudioFile) => {
   // 创建下载链接
   const link = document.createElement('a')
-  link.href = video.url
-  link.download = video.name
+  link.href = audio.url
+  link.download = audio.name
   link.click()
   ElMessage.success('开始下载')
 }
 
-const handleDelete = async (video: MediaFile) => {
+const handleDelete = async (audio: AudioFile) => {
   try {
     await ElMessageBox.confirm(
-      `确定要删除视频 "${video.name}" 吗？此操作不可恢复。`,
+      `确定要删除音频 "${audio.name}" 吗？此操作不可恢复。`,
       '确认删除',
       {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
         type: 'warning'
       }
     )
     
-    await deleteVideoApi(video.id)
+    // 模拟删除API调用
+    await new Promise(resolve => setTimeout(resolve, 500))
+    
     ElMessage.success('删除成功')
-    loadVideoList()
+    loadAudioList()
   } catch (error) {
     if (error !== 'cancel') {
       console.error('删除失败:', error)
@@ -508,46 +590,94 @@ const handleFileChange = (file: any) => {
 const resetUploadForm = () => {
   uploadForm.title = ''
   uploadForm.description = ''
+  uploadForm.status = 'published'
   uploadForm.file = null
   fileList.value = []
-  uploadFormRef.value?.resetFields()
   uploadProgress.value = 0
 }
 
-const handleUpload = () => {
-  uploadFormRef.value?.validate((valid: boolean) => {
-    if (valid) {
-      uploading.value = true
-      uploadProgress.value = 0
-      
-      // 模拟上传进度
-      const progressInterval = setInterval(() => {
-        uploadProgress.value += Math.random() * 15
-        if (uploadProgress.value >= 100) {
-          uploadProgress.value = 100
-          clearInterval(progressInterval)
-          
-          setTimeout(() => {
-            uploading.value = false
-            showUploadDialog.value = false
-            uploadProgress.value = 0
-            ElMessage.success('上传成功')
-            resetUploadForm()
-            loadVideoList()
-          }, 500)
-        }
-      }, 200)
+const resetEditForm = () => {
+  editForm.id = 0
+  editForm.title = ''
+  editForm.description = ''
+  editForm.status = 'published'
+}
+
+const handleUpload = async () => {
+  try {
+    await uploadFormRef.value?.validate()
+    
+    if (!uploadForm.file) {
+      ElMessage.warning('请选择要上传的音频文件')
+      return
     }
-  })
+    
+    uploading.value = true
+    uploadProgress.value = 0
+    
+    // 模拟上传进度
+    const interval = setInterval(() => {
+      if (uploadProgress.value < 90) {
+        uploadProgress.value += Math.random() * 30
+      }
+    }, 200)
+    
+    // 模拟上传API调用
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    
+    clearInterval(interval)
+    uploadProgress.value = 100
+    
+    setTimeout(() => {
+      showUploadDialog.value = false
+      uploadProgress.value = 0
+      ElMessage.success('上传成功')
+      resetUploadForm()
+      loadAudioList()
+    }, 500)
+  } catch (error) {
+    console.error('上传失败:', error)
+  } finally {
+    uploading.value = false
+  }
+}
+
+const handleSaveEdit = async () => {
+  try {
+    await editFormRef.value?.validate()
+    
+    editLoading.value = true
+    
+    // 模拟编辑API调用
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    // 更新本地数据
+    const index = audioList.value.findIndex(item => item.id === editForm.id)
+    if (index !== -1) {
+      audioList.value[index].name = editForm.title
+      audioList.value[index].description = editForm.description
+      audioList.value[index].status = editForm.status
+      audioList.value[index].updatedAt = new Date().toISOString()
+    }
+    
+    editDialogVisible.value = false
+    ElMessage.success('保存成功')
+    resetEditForm()
+  } catch (error) {
+    console.error('保存失败:', error)
+    ElMessage.error('保存失败')
+  } finally {
+    editLoading.value = false
+  }
 }
 
 onMounted(() => {
-  loadVideoList()
+  loadAudioList()
 })
 </script>
 
 <style scoped>
-.video-list {
+.audio-list {
   background: #fff;
   border-radius: 8px;
   padding: 24px;
@@ -603,15 +733,15 @@ onMounted(() => {
   border: 1px solid #f0f0f0;
 }
 
-.video-table {
+.audio-table {
   border-radius: 8px;
 }
 
-.video-table :deep(.el-table__header) {
+.audio-table :deep(.el-table__header) {
   background-color: #fafbfc;
 }
 
-.video-table :deep(.el-table__header th) {
+.audio-table :deep(.el-table__header th) {
   background-color: #fafbfc;
   border-bottom: 1px solid #e1e5e9;
   font-weight: 600;
@@ -622,16 +752,16 @@ onMounted(() => {
   padding: 16px 12px;
 }
 
-.video-table :deep(.el-table__body tr) {
+.audio-table :deep(.el-table__body tr) {
   border-bottom: 1px solid #f0f0f0;
 }
 
-.video-table :deep(.el-table__body td) {
+.audio-table :deep(.el-table__body td) {
   padding: 16px 12px;
   border-bottom: 1px solid #f0f0f0;
 }
 
-.video-table :deep(.el-table__body tr:hover td) {
+.audio-table :deep(.el-table__body tr:hover td) {
   background-color: #f9fafb;
 }
 
@@ -642,42 +772,76 @@ onMounted(() => {
   font-size: 14px;
 }
 
-/* 视频信息样式 */
-.video-info {
+/* 音频信息样式 */
+.audio-info {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.video-thumbnail {
+.audio-thumbnail {
   width: 48px;
-  height: 36px;
-  border-radius: 6px;
-  background-color: #f3f4f6;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  color: white;
   flex-shrink: 0;
+  position: relative;
 }
 
-.video-thumbnail img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.audio-icon {
+  font-size: 20px;
+  z-index: 2;
 }
 
-.default-thumbnail {
-  font-size: 18px;
-  color: #9ca3af;
+.audio-wave {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 1px;
+  z-index: 1;
 }
 
-.video-details {
+.audio-wave span {
+  width: 2px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 1px;
+  animation: wave 1.5s ease-in-out infinite;
+}
+
+.audio-wave span:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.audio-wave span:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.audio-wave span:nth-child(4) {
+  animation-delay: 0.3s;
+}
+
+@keyframes wave {
+  0%, 100% {
+    height: 4px;
+  }
+  50% {
+    height: 12px;
+  }
+}
+
+.audio-details {
   flex: 1;
   min-width: 0;
 }
 
-.video-name {
+.audio-name {
   font-size: 14px;
   font-weight: 500;
   color: #111827;
@@ -688,7 +852,7 @@ onMounted(() => {
   white-space: nowrap;
 }
 
-.video-format {
+.audio-format {
   font-size: 12px;
   color: #6b7280;
   margin: 0;
@@ -748,37 +912,6 @@ onMounted(() => {
   font-size: 14px;
 }
 
-.pagination-container :deep(.el-pagination) {
-  gap: 8px;
-}
-
-.pagination-container :deep(.el-pagination .el-pager li) {
-  min-width: 32px;
-  height: 32px;
-  line-height: 32px;
-  border-radius: 6px;
-  border: 1px solid #e1e5e9;
-  background: #fff;
-  color: #374151;
-  font-size: 14px;
-}
-
-.pagination-container :deep(.el-pagination .el-pager li.is-active) {
-  background: #3b82f6;
-  border-color: #3b82f6;
-  color: #fff;
-}
-
-.pagination-container :deep(.el-pagination .btn-prev),
-.pagination-container :deep(.el-pagination .btn-next) {
-  background: #fff;
-  border: 1px solid #e1e5e9;
-  border-radius: 6px;
-  width: 32px;
-  height: 32px;
-  color: #374151;
-}
-
 /* 上传悬浮按钮 */
 .upload-fab-container {
   position: fixed;
@@ -802,8 +935,8 @@ onMounted(() => {
 
 .upload-fab-tooltip {
   position: absolute;
-  right: 70px;
   top: 50%;
+  right: 70px;
   transform: translateY(-50%);
   background: rgba(0, 0, 0, 0.8);
   color: white;
@@ -852,33 +985,6 @@ onMounted(() => {
   border-color: #409eff;
 }
 
-.upload-progress {
-  margin-top: 16px;
-  padding: 16px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
-}
-
-.progress-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.progress-text {
-  font-size: 14px;
-  color: #606266;
-  font-weight: 500;
-}
-
-.progress-percentage {
-  font-size: 14px;
-  color: #409eff;
-  font-weight: 600;
-}
-
 /* 预览对话框样式 */
 .preview-content {
   text-align: center;
@@ -905,7 +1011,7 @@ onMounted(() => {
 
 /* 响应式设计 */
 @media (max-width: 768px) {
-  .video-list {
+  .audio-list {
     padding: 16px;
   }
   
@@ -920,13 +1026,13 @@ onMounted(() => {
     gap: 12px;
   }
   
-  .video-info {
+  .audio-info {
     gap: 8px;
   }
   
-  .video-thumbnail {
+  .audio-thumbnail {
     width: 40px;
-    height: 30px;
+    height: 40px;
   }
   
   .action-buttons {
@@ -951,17 +1057,17 @@ onMounted(() => {
 }
 
 @media (max-width: 480px) {
-  .video-table :deep(.el-table__header th),
-  .video-table :deep(.el-table__body td) {
+  .audio-table :deep(.el-table__header th),
+  .audio-table :deep(.el-table__body td) {
     padding: 12px 8px;
   }
   
-  .video-name {
+  .audio-name {
     font-size: 13px;
   }
   
-  .video-format {
+  .audio-format {
     font-size: 11px;
   }
 }
-</style> 
+</style>
