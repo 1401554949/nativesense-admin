@@ -1,148 +1,159 @@
 <template>
-  <div class="audio-list">
-    <div class="page-header">
-      <h1 class="page-title">{{ $t('menu.audioList') }}</h1>
+  <div class="video-list">
+    <!-- 筛选器 -->
+    <div class="filters">
+      <div class="search-section">
+        <el-input
+          v-model="searchForm.keyword"
+          placeholder="搜索视频..."
+          class="search-input"
+          clearable
+          @keyup.enter="handleSearch"
+        >
+          <template #prefix>
+            <el-icon><Search /></el-icon>
+          </template>
+        </el-input>
+      </div>
       
-      <!-- 筛选器 -->
-      <div class="filters">
-        <div class="filter-group">
-          <div class="filter-icon">
-            <el-icon><Filter /></el-icon>
-          </div>
-          <span class="filter-label">{{ $t('common.filterBy') }}</span>
-          
-          <el-select 
-            v-model="filters.date" 
-            :placeholder="$t('common.date')" 
-            class="filter-select"
-            clearable
-            @clear="filters.date = 'all'"
-          >
-            <el-option :label="$t('common.today')" value="today" />
-            <el-option :label="$t('common.thisWeek')" value="thisWeek" />
-            <el-option :label="$t('common.thisMonth')" value="thisMonth" />
-            <el-option :label="$t('common.all')" value="all" />
-          </el-select>
-          
-          <el-select 
-            v-model="filters.status" 
-            :placeholder="$t('common.status')" 
-            class="filter-select"
-            clearable
-            @clear="filters.status = 'all'"
-          >
-            <el-option :label="$t('audio.published')" value="published" />
-            <el-option :label="$t('audio.processing')" value="processing" />
-            <el-option :label="$t('audio.draft')" value="draft" />
-            <el-option :label="$t('common.all')" value="all" />
-          </el-select>
-          
-          <el-select 
-            v-model="filters.type" 
-            :placeholder="$t('audio.audioType')" 
-            class="filter-select"
-            clearable
-            @clear="filters.type = 'all'"
-          >
-            <el-option :label="$t('audio.music')" value="music" />
-            <el-option :label="$t('audio.voice')" value="voice" />
-            <el-option :label="$t('audio.podcast')" value="podcast" />
-            <el-option :label="$t('audio.effect')" value="effect" />
-            <el-option :label="$t('common.all')" value="all" />
-          </el-select>
-        </div>
+      <div class="filter-section">
+        <el-select 
+          v-model="filters.status" 
+          placeholder="状态：全部"
+          class="filter-select"
+          clearable
+        >
+          <el-option label="已发布" value="published" />
+          <el-option label="处理中" value="processing" />
+          <el-option label="草稿" value="draft" />
+          <el-option label="全部" value="all" />
+        </el-select>
+        
+        <el-select 
+          v-model="filters.date" 
+          placeholder="按日期筛选"
+          class="filter-select date-filter"
+          clearable
+        >
+          <el-option label="今天" value="today" />
+          <el-option label="本周" value="thisWeek" />
+          <el-option label="本月" value="thisMonth" />
+          <el-option label="全部" value="all" />
+        </el-select>
       </div>
     </div>
-
-    <!-- 音频表格 -->
-    <el-card class="table-card">
-      <el-table :data="filteredAudios" class="audio-table" v-loading="loading">
-        <el-table-column prop="id" label="ID" width="80" />
+    
+    <!-- 视频列表 -->
+    <div class="table-container">
+      <el-table
+        v-loading="loading"
+        :data="videoList"
+        style="width: 100%"
+        class="video-table"
+      >
+        <el-table-column label="编号" width="80">
+          <template #default="{ row }">
+            <span class="table-id">#{{ row.id }}</span>
+          </template>
+        </el-table-column>
         
-        <el-table-column :label="$t('audio.name')" min-width="200">
-          <template #default="scope">
-            <div class="audio-info">
-              <div class="audio-thumbnail">
-                <el-icon><Headset /></el-icon>
-                <div class="audio-wave">
-                  <span></span>
-                  <span></span>
-                  <span></span>
-                  <span></span>
-                </div>
+        <el-table-column label="视频名称" min-width="250">
+          <template #default="{ row }">
+            <div class="video-info">
+              <div class="video-thumbnail">
+                <img v-if="row.thumbnail" :src="row.thumbnail" alt="缩略图">
+                <el-icon v-else class="default-thumbnail"><VideoPlay /></el-icon>
               </div>
-              <div class="audio-details">
-                <div class="audio-title">{{ scope.row.title }}</div>
-                <div class="audio-duration">{{ scope.row.duration }}</div>
+              <div class="video-details">
+                <p class="video-name">{{ row.name }}</p>
+                <p class="video-format">{{ row.format.toUpperCase() }} • {{ formatFileSize(row.size) }}</p>
               </div>
             </div>
           </template>
         </el-table-column>
         
-        <el-table-column :label="$t('audio.uploadDate')" min-width="120">
-          <template #default="scope">
-            {{ formatDate(scope.row.uploadTime) }}
+        <el-table-column label="上传日期" width="120">
+          <template #default="{ row }">
+            {{ formatDateShort(row.createdAt) }}
           </template>
         </el-table-column>
         
-        <el-table-column :label="$t('audio.type')" min-width="100">
-          <template #default="scope">
-            {{ $t(`audio.${scope.row.type}`) }}
+        <el-table-column label="时长" width="100">
+          <template #default="{ row }">
+            {{ formatDuration(row.duration) }}
           </template>
         </el-table-column>
         
-        <el-table-column :label="$t('audio.size')" min-width="100">
-          <template #default="scope">
-            {{ formatFileSize(scope.row.size) }}
+        <el-table-column label="格式" width="80">
+          <template #default="{ row }">
+            {{ row.format.toUpperCase() }}
           </template>
         </el-table-column>
         
-        <el-table-column :label="$t('common.status')" min-width="100">
-          <template #default="scope">
+        <el-table-column label="状态" width="100">
+          <template #default="{ row }">
             <el-tag 
-              :type="getStatusType(scope.row.status)" 
-              size="small"
+              :type="getStatusType(row.status)" 
               class="status-tag"
             >
-              {{ $t(`audio.${scope.row.status}`) }}
+              {{ getStatusLabel(row.status) }}
             </el-tag>
           </template>
         </el-table-column>
         
-        <el-table-column :label="$t('common.actions')" width="180" fixed="right" align="center">
-          <template #default="scope">
+        <el-table-column label="操作" width="280" fixed="right" align="center">
+          <template #default="{ row }">
             <div class="action-buttons">
-              <el-button type="primary" size="small" @click="playAudio(scope.row)">
-                {{ $t('audio.play') }}
+              <el-button 
+                type="primary" 
+                size="small"
+                @click="handlePreview(row)"
+              >
+                预览
               </el-button>
-              <el-button type="success" size="small" @click="editAudio(scope.row)">
-                {{ $t('audio.edit') }}
+              <el-button 
+                type="success" 
+                size="small"
+                @click="handleEdit(row)"
+              >
+                编辑
               </el-button>
-              <el-button type="danger" size="small" @click="deleteAudio(scope.row)">
-                {{ $t('audio.delete') }}
+              <el-button 
+                type="warning" 
+                size="small"
+                @click="handleDownload(row)"
+              >
+                下载
+              </el-button>
+              <el-button 
+                type="danger" 
+                size="small"
+                @click="handleDelete(row)"
+              >
+                删除
               </el-button>
             </div>
           </template>
         </el-table-column>
       </el-table>
+    </div>
       
-      <!-- 分页 -->
-      <div class="pagination-wrapper">
-        <div class="pagination-info">
-          {{ $t('common.showing') }} {{ paginationInfo.start }}-{{ paginationInfo.end }} {{ $t('common.of') }} {{ paginationInfo.total }}
-        </div>
-        <el-pagination
-          v-model:current-page="currentPage"
-          v-model:page-size="pageSize"
-          :page-sizes="[10, 20, 50, 100]"
-          :total="totalAudios"
-          layout="sizes, prev, pager, next"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-          class="pagination"
-        />
+    <!-- 分页 -->
+    <div class="pagination-container">
+      <div class="pagination-info">
+        显示 {{ pagination.pageSize }} 条，共 {{ pagination.total }} 条
       </div>
-    </el-card>
+      <el-pagination
+        v-model:current-page="pagination.page"
+        v-model:page-size="pagination.pageSize"
+        :page-sizes="[10, 20, 50, 100]"
+        :total="pagination.total"
+        layout="prev, pager, next"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+        small
+      />
+    </div>
 
     <!-- 上传悬浮按钮 -->
     <div class="upload-fab-container">
@@ -155,252 +166,339 @@
       >
         <el-icon size="20"><Plus /></el-icon>
       </el-button>
-      <div class="upload-fab-tooltip">{{ $t('audio.uploadAudio') }}</div>
+      <div class="upload-fab-tooltip">上传视频</div>
     </div>
 
     <!-- 上传对话框 -->
     <el-dialog
       v-model="showUploadDialog"
-      :title="$t('audio.uploadAudio')"
+      title="上传视频"
       width="600px"
       @close="resetUploadForm"
     >
       <el-form :model="uploadForm" :rules="uploadRules" ref="uploadFormRef" label-width="100px">
-        <el-form-item :label="$t('audio.title')" prop="title">
-          <el-input v-model="uploadForm.title" :placeholder="$t('audio.enterTitle')" />
+        <el-form-item label="视频标题" prop="title">
+          <el-input v-model="uploadForm.title" placeholder="请输入视频标题" />
         </el-form-item>
         
-        <el-form-item :label="$t('audio.type')" prop="type">
-          <el-select v-model="uploadForm.type" :placeholder="$t('audio.selectType')" style="width: 100%">
-            <el-option :label="$t('audio.music')" value="music" />
-            <el-option :label="$t('audio.voice')" value="voice" />
-            <el-option :label="$t('audio.podcast')" value="podcast" />
-            <el-option :label="$t('audio.effect')" value="effect" />
-          </el-select>
-        </el-form-item>
-        
-        <el-form-item :label="$t('audio.description')" prop="description">
+        <el-form-item label="视频描述" prop="description">
           <el-input 
             v-model="uploadForm.description" 
             type="textarea" 
             :rows="3"
-            :placeholder="$t('audio.enterDescription')"
+            placeholder="请输入视频描述"
           />
         </el-form-item>
         
-        <el-form-item :label="$t('audio.file')" prop="file">
-          <el-upload
-            class="upload-demo"
-            drag
-            action="#"
-            :auto-upload="false"
-            :on-change="handleFileChange"
-            :file-list="fileList"
-            accept="audio/*"
-            :limit="1"
-          >
-            <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
-            <div class="el-upload__text">
-              {{ $t('audio.dragOrClick') }}
-            </div>
-            <template #tip>
-              <div class="el-upload__tip">
-                {{ $t('audio.fileFormat') }}
+        <el-form-item label="视频文件" prop="file" class="file-upload-item">
+          <div class="upload-container">
+            <el-upload
+              class="upload-demo"
+              drag
+              action="#"
+              :auto-upload="false"
+              :on-change="handleFileChange"
+              :file-list="fileList"
+              accept="video/*"
+              :limit="1"
+            >
+              <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
+              <div class="el-upload__text">
+                将文件拖到此处，或<em>点击上传</em>
               </div>
-            </template>
-          </el-upload>
+              <template #tip>
+                <div class="el-upload__tip">
+                  支持 MP4、AVI、MOV 等格式，文件大小不超过 100MB
+                </div>
+              </template>
+            </el-upload>
+            
+            <!-- 上传进度 -->
+            <div v-if="uploadProgress > 0 && uploadProgress < 100" class="upload-progress">
+              <div class="progress-info">
+                <span class="progress-text">正在上传</span>
+                <span class="progress-percentage">{{ uploadProgress }}%</span>
+              </div>
+              <el-progress 
+                :percentage="uploadProgress" 
+                :stroke-width="6"
+                status="success"
+                :show-text="false"
+              />
+            </div>
+          </div>
         </el-form-item>
       </el-form>
       
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="showUploadDialog = false">{{ $t('common.cancel') }}</el-button>
+          <el-button @click="showUploadDialog = false">取消</el-button>
           <el-button type="primary" @click="handleUpload" :loading="uploading">
-            {{ $t('audio.upload') }}
+            上传
           </el-button>
         </span>
       </template>
+    </el-dialog>
+    
+    <!-- 预览对话框 -->
+    <el-dialog
+      v-model="previewDialogVisible"
+      title="视频预览"
+      width="80%"
+      align-center
+    >
+      <div v-if="previewVideo" class="preview-content">
+        <video
+          :src="previewVideo.url"
+          controls
+          style="width: 100%; max-height: 500px;"
+        >
+          您的浏览器不支持视频播放
+        </video>
+        <div class="preview-info">
+          <h3>{{ previewVideo.name }}</h3>
+          <p>文件大小: {{ formatFileSize(previewVideo.size) }}</p>
+          <p>格式: {{ previewVideo.format.toUpperCase() }}</p>
+          <p v-if="previewVideo.duration">时长: {{ formatDuration(previewVideo.duration) }}</p>
+          <p>上传时间: {{ formatDate(previewVideo.createdAt) }}</p>
+        </div>
+      </div>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive } from 'vue'
-import { useI18n } from 'vue-i18n'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { 
-  Filter, 
-  Headset, 
-  Plus,
-  UploadFilled
-} from '@element-plus/icons-vue'
+import { Search, VideoPlay, Plus, UploadFilled } from '@element-plus/icons-vue'
+import { getVideoListApi, deleteVideoApi, type MediaFile } from '@/api/media'
 
-const { t } = useI18n()
-
-// 数据
 const loading = ref(false)
+const videoList = ref<MediaFile[]>([])
+const previewDialogVisible = ref(false)
+const previewVideo = ref<MediaFile | null>(null)
 const showUploadDialog = ref(false)
 const uploading = ref(false)
-const currentPage = ref(1)
-const pageSize = ref(10)
+const uploadProgress = ref(0)
 
-// 筛选器
-const filters = reactive({
-  date: 'all',
-  status: 'all',
-  type: 'all'
+const searchForm = reactive({
+  keyword: ''
 })
 
-// 音频数据
-const audios = ref([
-  {
-    id: '00001',
-    title: '背景音乐 - 轻松办公BGM',
-    duration: '03:45',
-    size: 8947848,
-    uploadTime: '2024-01-15T14:30:00Z',
-    type: 'music',
-    status: 'published',
-    plays: 456
-  },
-  {
-    id: '00002',
-    title: '语音提示 - 系统操作音效包',
-    duration: '01:20',
-    size: 3145728,
-    uploadTime: '2024-01-14T10:15:00Z',
-    type: 'effect',
-    status: 'processing',
-    plays: 789
-  },
-  {
-    id: '00003',
-    title: '播客节目 - 科技前沿讨论',
-    duration: '25:30',
-    size: 60817408,
-    uploadTime: '2024-01-13T09:45:00Z',
-    type: 'podcast',
-    status: 'published',
-    plays: 1234
-  },
-  {
-    id: '00004',
-    title: '英语口语 - 商务会议用语',
-    duration: '12:15',
-    size: 29360128,
-    uploadTime: '2024-01-12T16:20:00Z',
-    type: 'voice',
-    status: 'draft',
-    plays: 0
-  },
-  {
-    id: '00005',
-    title: '冥想音乐 - 放松身心专用',
-    duration: '08:30',
-    size: 20971520,
-    uploadTime: '2024-01-11T08:00:00Z',
-    type: 'music',
-    status: 'published',
-    plays: 2048
-  }
-])
+const filters = reactive({
+  status: '',
+  date: ''
+})
+
+const pagination = reactive({
+  page: 1,
+  pageSize: 10,
+  total: 0
+})
 
 // 上传表单
 const uploadForm = reactive({
   title: '',
-  type: '',
   description: '',
   file: null
 })
 
 const uploadRules = {
   title: [
-    { required: true, message: t('audio.titleRequired'), trigger: 'blur' }
-  ],
-  type: [
-    { required: true, message: t('audio.typeRequired'), trigger: 'change' }
+    { required: true, message: '请输入视频标题', trigger: 'blur' }
   ]
 }
 
 const fileList = ref([])
 const uploadFormRef = ref()
 
-// 计算属性
-const filteredAudios = computed(() => {
-  let result = audios.value
-
-  if (filters.status !== 'all') {
-    result = result.filter(audio => audio.status === filters.status)
-  }
-  
-  if (filters.type !== 'all') {
-    result = result.filter(audio => audio.type === filters.type)
-  }
-
-  return result.slice((currentPage.value - 1) * pageSize.value, currentPage.value * pageSize.value)
-})
-
-const totalAudios = computed(() => audios.value.length)
-
-const paginationInfo = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value + 1
-  const end = Math.min(currentPage.value * pageSize.value, totalAudios.value)
-  return { start, end, total: totalAudios.value }
-})
-
-// 方法
-const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return '0 B'
+const formatFileSize = (size: number): string => {
+  if (size === 0) return '0 B'
   const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
+  const i = Math.floor(Math.log(size) / Math.log(k))
+  return parseFloat((size / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
-const formatDate = (dateString: string): string => {
-  return new Date(dateString).toLocaleDateString('zh-CN')
+const formatDuration = (duration?: number): string => {
+  if (!duration) return '-'
+  const minutes = Math.floor(duration / 60)
+  const seconds = Math.floor(duration % 60)
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`
 }
 
-const getStatusType = (status: string) => {
-  const statusMap: Record<string, string> = {
-    published: 'success',
-    processing: 'warning',
-    draft: 'info'
-  }
-  return statusMap[status] || 'info'
-}
-
-
-
-const handleSizeChange = (val: number) => {
-  pageSize.value = val
-  currentPage.value = 1
-}
-
-const handleCurrentChange = (val: number) => {
-  currentPage.value = val
-}
-
-const playAudio = (audio: any) => {
-  ElMessage.info(t('audio.playFeature'))
-}
-
-const editAudio = (audio: any) => {
-  ElMessage.info(t('audio.editFeature'))
-}
-
-const deleteAudio = (audio: any) => {
-  ElMessageBox.confirm(
-    t('audio.deleteConfirm'),
-    t('common.warning'),
-    {
-      confirmButtonText: t('common.confirm'),
-      cancelButtonText: t('common.cancel'),
-      type: 'warning',
-    }
-  ).then(() => {
-    ElMessage.success(t('audio.deleteSuccess'))
+const formatDate = (dateStr: string): string => {
+  const date = new Date(dateStr)
+  return date.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
   })
+}
+
+const formatDateShort = (dateStr: string): string => {
+  const date = new Date(dateStr)
+  return date.toLocaleDateString('zh-CN', {
+    month: '2-digit',
+    day: '2-digit',
+    year: 'numeric'
+  })
+}
+
+const getStatusType = (status: string): string => {
+  switch (status) {
+    case 'published': return 'success'
+    case 'processing': return 'warning'
+    case 'draft': return 'info'
+    default: return 'warning'
+  }
+}
+
+const getStatusLabel = (status: string): string => {
+  switch (status) {
+    case 'published': return '已发布'
+    case 'processing': return '处理中'
+    case 'draft': return '草稿'
+    default: return '待处理'
+  }
+}
+
+const loadVideoList = async () => {
+  loading.value = true
+  try {
+    const response = await getVideoListApi({
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+      keyword: searchForm.keyword
+    })
+    
+    videoList.value = response.list
+    pagination.total = response.total
+  } catch (error) {
+    console.error('加载视频列表失败:', error)
+    // 模拟数据
+    videoList.value = [
+      {
+        id: 1001,
+        name: '产品宣传片',
+        url: '/mock/video1.mp4',
+        size: 1024 * 1024 * 85,
+        duration: 180,
+        format: 'mp4',
+        thumbnail: '/mock/thumbnail1.jpg',
+        status: 'published',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: 1002,
+        name: '企业培训视频',
+        url: '/mock/video2.mp4',
+        size: 1024 * 1024 * 120,
+        duration: 1200,
+        format: 'mp4',
+        thumbnail: '/mock/thumbnail2.jpg',
+        status: 'processing',
+        createdAt: new Date(Date.now() - 86400000).toISOString(),
+        updatedAt: new Date(Date.now() - 86400000).toISOString()
+      },
+      {
+        id: 1003,
+        name: '新品发布会',
+        url: '/mock/video3.mp4',
+        size: 1024 * 1024 * 150,
+        duration: 1800,
+        format: 'mp4',
+        thumbnail: '/mock/thumbnail3.jpg',
+        status: 'published',
+        createdAt: new Date(Date.now() - 172800000).toISOString(),
+        updatedAt: new Date(Date.now() - 172800000).toISOString()
+      },
+      {
+        id: 1004,
+        name: '客户案例分享',
+        url: '/mock/video4.mp4',
+        size: 1024 * 1024 * 95,
+        duration: 900,
+        format: 'mp4',
+        thumbnail: '',
+        status: 'draft',
+        createdAt: new Date(Date.now() - 259200000).toISOString(),
+        updatedAt: new Date(Date.now() - 259200000).toISOString()
+      },
+      {
+        id: 1005,
+        name: '技术教程演示',
+        url: '/mock/video5.mp4',
+        size: 1024 * 1024 * 75,
+        duration: 720,
+        format: 'mp4',
+        thumbnail: '/mock/thumbnail5.jpg',
+        status: 'published',
+        createdAt: new Date(Date.now() - 345600000).toISOString(),
+        updatedAt: new Date(Date.now() - 345600000).toISOString()
+      }
+    ]
+    pagination.total = 50
+  } finally {
+    loading.value = false
+  }
+}
+
+const handleSearch = () => {
+  pagination.page = 1
+  loadVideoList()
+}
+
+const handleSizeChange = (size: number) => {
+  pagination.pageSize = size
+  pagination.page = 1
+  loadVideoList()
+}
+
+const handleCurrentChange = (page: number) => {
+  pagination.page = page
+  loadVideoList()
+}
+
+const handlePreview = (video: MediaFile) => {
+  previewVideo.value = video
+  previewDialogVisible.value = true
+}
+
+const handleEdit = (video: MediaFile) => {
+  ElMessage.info('编辑功能待开发')
+}
+
+const handleDownload = (video: MediaFile) => {
+  // 创建下载链接
+  const link = document.createElement('a')
+  link.href = video.url
+  link.download = video.name
+  link.click()
+  ElMessage.success('开始下载')
+}
+
+const handleDelete = async (video: MediaFile) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除视频 "${video.name}" 吗？此操作不可恢复。`,
+      '确认删除',
+      {
+        type: 'warning'
+      }
+    )
+    
+    await deleteVideoApi(video.id)
+    ElMessage.success('删除成功')
+    loadVideoList()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('删除失败:', error)
+    }
+  }
 }
 
 const handleFileChange = (file: any) => {
@@ -409,223 +507,297 @@ const handleFileChange = (file: any) => {
 
 const resetUploadForm = () => {
   uploadForm.title = ''
-  uploadForm.type = ''
   uploadForm.description = ''
   uploadForm.file = null
   fileList.value = []
   uploadFormRef.value?.resetFields()
+  uploadProgress.value = 0
 }
 
 const handleUpload = () => {
   uploadFormRef.value?.validate((valid: boolean) => {
     if (valid) {
       uploading.value = true
-      // 模拟上传
-      setTimeout(() => {
-        uploading.value = false
-        showUploadDialog.value = false
-        ElMessage.success(t('audio.uploadSuccess'))
-        resetUploadForm()
-      }, 2000)
+      uploadProgress.value = 0
+      
+      // 模拟上传进度
+      const progressInterval = setInterval(() => {
+        uploadProgress.value += Math.random() * 15
+        if (uploadProgress.value >= 100) {
+          uploadProgress.value = 100
+          clearInterval(progressInterval)
+          
+          setTimeout(() => {
+            uploading.value = false
+            showUploadDialog.value = false
+            uploadProgress.value = 0
+            ElMessage.success('上传成功')
+            resetUploadForm()
+            loadVideoList()
+          }, 500)
+        }
+      }, 200)
     }
   })
 }
+
+onMounted(() => {
+  loadVideoList()
+})
 </script>
 
 <style scoped>
-.audio-list {
-  padding: 0;
-}
-
-.page-header {
-  margin-bottom: 24px;
-}
-
-.page-title {
-  font-size: 28px;
-  font-weight: 700;
-  color: #2d3748;
-  margin: 0 0 20px 0;
-}
-
-.filters {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-  border-radius: 16px;
+.video-list {
+  background: #fff;
+  border-radius: 8px;
   padding: 24px;
-  box-shadow: 0 4px 20px rgba(79, 172, 254, 0.15);
-  margin-bottom: 24px;
 }
 
-.filter-group {
+/* 筛选器样式 */
+.filters {
   display: flex;
+  justify-content: flex-start;
   align-items: center;
   gap: 16px;
-  flex-wrap: wrap;
+  margin-bottom: 24px;
+  padding: 16px 0;
 }
 
-.filter-icon {
-  width: 40px;
-  height: 40px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
+.search-section {
+  flex: 1;
+  max-width: 300px;
+}
+
+.search-input {
+  width: 100%;
+}
+
+.search-input :deep(.el-input__wrapper) {
+  border-radius: 8px;
+  border: 1px solid #e1e5e9;
+}
+
+.filter-section {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 18px;
-}
-
-.filter-label {
-  font-weight: 600;
-  color: white;
-  font-size: 16px;
-  margin-right: 12px;
+  gap: 16px;
 }
 
 .filter-select {
   min-width: 140px;
 }
 
-:deep(.filter-select .el-input__wrapper) {
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+.filter-select :deep(.el-input__wrapper) {
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
+  border: 1px solid #e1e5e9;
 }
 
-:deep(.filter-select .el-input__wrapper:hover) {
-  background: white;
-  border-color: rgba(255, 255, 255, 0.5);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+.date-filter {
+  min-width: 180px;
 }
 
-.table-card {
-  border: none;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-  border-radius: 12px;
+/* 表格容器 */
+.table-container {
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #f0f0f0;
 }
 
-.audio-table {
+.video-table {
+  border-radius: 8px;
+}
+
+.video-table :deep(.el-table__header) {
+  background-color: #fafbfc;
+}
+
+.video-table :deep(.el-table__header th) {
+  background-color: #fafbfc;
+  border-bottom: 1px solid #e1e5e9;
+  font-weight: 600;
+  color: #6b7280;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 16px 12px;
+}
+
+.video-table :deep(.el-table__body tr) {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.video-table :deep(.el-table__body td) {
+  padding: 16px 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.video-table :deep(.el-table__body tr:hover td) {
+  background-color: #f9fafb;
+}
+
+/* ID 列样式 */
+.table-id {
+  font-weight: 600;
+  color: #374151;
   font-size: 14px;
 }
 
-.audio-info {
+/* 视频信息样式 */
+.video-info {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.audio-thumbnail {
-  position: relative;
-  width: 60px;
-  height: 60px;
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-  border-radius: 50%;
+.video-thumbnail {
+  width: 48px;
+  height: 36px;
+  border-radius: 6px;
+  background-color: #f3f4f6;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  overflow: hidden;
   flex-shrink: 0;
 }
 
-.audio-wave {
-  position: absolute;
-  bottom: 8px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 1px;
+.video-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.audio-wave span {
-  width: 2px;
-  height: 8px;
-  background: rgba(255, 255, 255, 0.6);
-  border-radius: 1px;
-  animation: wave 1.5s ease-in-out infinite;
+.default-thumbnail {
+  font-size: 18px;
+  color: #9ca3af;
 }
 
-.audio-wave span:nth-child(2) {
-  animation-delay: 0.1s;
-}
-
-.audio-wave span:nth-child(3) {
-  animation-delay: 0.2s;
-}
-
-.audio-wave span:nth-child(4) {
-  animation-delay: 0.3s;
-}
-
-@keyframes wave {
-  0%, 100% {
-    height: 4px;
-  }
-  50% {
-    height: 12px;
-  }
-}
-
-.audio-details {
+.video-details {
   flex: 1;
   min-width: 0;
 }
 
-.audio-title {
-  font-weight: 600;
-  color: #2d3748;
-  margin-bottom: 4px;
-  line-height: 1.4;
+.video-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #111827;
+  margin: 0 0 4px 0;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.audio-duration {
+.video-format {
   font-size: 12px;
-  color: #a0aec0;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.2;
 }
 
+/* 操作按钮样式 */
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+}
+
+.action-buttons .el-button {
+  margin: 0;
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 4px;
+}
+
+/* 状态标签样式 */
 .status-tag {
-  border-radius: 12px;
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border: none;
 }
 
-.pagination-wrapper {
+.status-tag.el-tag--warning {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.status-tag.el-tag--success {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.status-tag.el-tag--info {
+  background-color: #e0e7ff;
+  color: #3730a3;
+}
+
+/* 分页容器样式 */
+.pagination-container {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 20px;
-  padding: 0 20px;
+  margin-top: 24px;
+  padding: 16px 0;
 }
 
 .pagination-info {
+  color: #6b7280;
   font-size: 14px;
-  color: #718096;
 }
 
+.pagination-container :deep(.el-pagination) {
+  gap: 8px;
+}
+
+.pagination-container :deep(.el-pagination .el-pager li) {
+  min-width: 32px;
+  height: 32px;
+  line-height: 32px;
+  border-radius: 6px;
+  border: 1px solid #e1e5e9;
+  background: #fff;
+  color: #374151;
+  font-size: 14px;
+}
+
+.pagination-container :deep(.el-pagination .el-pager li.is-active) {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #fff;
+}
+
+.pagination-container :deep(.el-pagination .btn-prev),
+.pagination-container :deep(.el-pagination .btn-next) {
+  background: #fff;
+  border: 1px solid #e1e5e9;
+  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  color: #374151;
+}
+
+/* 上传悬浮按钮 */
 .upload-fab-container {
   position: fixed;
-  bottom: 30px;
-  right: 30px;
-  z-index: 1000;
+  bottom: 80px;
+  right: 40px;
+  z-index: 999;
 }
 
 .upload-fab {
   width: 56px;
   height: 56px;
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-  border: none;
-  box-shadow: 0 8px 25px rgba(79, 172, 254, 0.3);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
 }
 
 .upload-fab:hover {
-  transform: translateY(-3px) scale(1.05);
-  box-shadow: 0 12px 35px rgba(79, 172, 254, 0.4);
-}
-
-.upload-fab:active {
-  transform: translateY(-1px) scale(0.98);
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
 }
 
 .upload-fab-tooltip {
@@ -636,80 +808,125 @@ const handleUpload = () => {
   background: rgba(0, 0, 0, 0.8);
   color: white;
   padding: 8px 12px;
-  border-radius: 6px;
+  border-radius: 4px;
   font-size: 12px;
-  font-weight: 500;
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
-  transition: all 0.3s ease;
+  transition: opacity 0.3s ease;
 }
 
 .upload-fab-container:hover .upload-fab-tooltip {
   opacity: 1;
-  right: 75px;
 }
 
-.action-buttons {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-  align-items: center;
+/* 上传对话框样式 */
+.file-upload-item {
+  grid-column: 1 / -1;
 }
 
-.action-buttons .el-button {
-  padding: 6px 12px;
-  font-size: 12px;
+.upload-container {
+  width: 100%;
+}
+
+.upload-demo {
+  width: 100%;
+}
+
+.upload-demo :deep(.el-upload) {
+  width: 100%;
+}
+
+.upload-demo :deep(.el-upload-dragger) {
+  width: 100%;
+  height: 180px;
+  border: 2px dashed #d9d9d9;
   border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s;
+}
+
+.upload-demo :deep(.el-upload-dragger:hover) {
+  border-color: #409eff;
+}
+
+.upload-progress {
+  margin-top: 16px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.progress-text {
+  font-size: 14px;
+  color: #606266;
   font-weight: 500;
 }
 
-:deep(.el-table th) {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  color: #495057;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  font-size: 11px;
-  border-bottom: 2px solid #dee2e6;
-  height: 56px;
+.progress-percentage {
+  font-size: 14px;
+  color: #409eff;
+  font-weight: 600;
 }
 
-:deep(.el-table td) {
-  border-bottom: 1px solid #f1f3f4;
-  vertical-align: middle;
-  padding: 16px 12px;
+/* 预览对话框样式 */
+.preview-content {
+  text-align: center;
 }
 
-:deep(.el-table tbody tr:hover) {
-  background-color: #f8f9ff;
+.preview-info {
+  margin-top: 20px;
+  text-align: left;
 }
 
-:deep(.el-pagination) {
-  --el-pagination-font-size: 14px;
+.preview-info h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 12px 0;
 }
 
-/* 响应式样式 */
+.preview-info p {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 6px 0;
+  line-height: 1.5;
+}
+
+/* 响应式设计 */
 @media (max-width: 768px) {
-  .filters {
+  .video-list {
     padding: 16px;
-    margin-bottom: 16px;
   }
   
-  .filter-group {
+  .filters {
     flex-direction: column;
-    align-items: flex-start;
+    gap: 16px;
+    align-items: stretch;
+  }
+  
+  .filter-section {
+    flex-direction: column;
     gap: 12px;
   }
   
-  .filter-select {
-    min-width: 100%;
+  .video-info {
+    gap: 8px;
   }
   
-  .audio-info {
-    flex-direction: column;
-    gap: 8px;
-    align-items: flex-start;
+  .video-thumbnail {
+    width: 40px;
+    height: 30px;
   }
   
   .action-buttons {
@@ -719,27 +936,32 @@ const handleUpload = () => {
   
   .action-buttons .el-button {
     width: 100%;
-    font-size: 11px;
-    padding: 4px 8px;
   }
   
-  .pagination-wrapper {
+  .pagination-container {
     flex-direction: column;
-    gap: 12px;
+    gap: 16px;
+    text-align: center;
   }
   
   .upload-fab-container {
     bottom: 20px;
     right: 20px;
   }
-  
-  .upload-fab {
-    width: 48px;
-    height: 48px;
+}
+
+@media (max-width: 480px) {
+  .video-table :deep(.el-table__header th),
+  .video-table :deep(.el-table__body td) {
+    padding: 12px 8px;
   }
   
-  .upload-fab-tooltip {
-    display: none;
+  .video-name {
+    font-size: 13px;
+  }
+  
+  .video-format {
+    font-size: 11px;
   }
 }
 </style> 

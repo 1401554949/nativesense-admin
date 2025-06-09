@@ -137,17 +137,17 @@
       <!-- 头部 -->
       <el-header class="header">
         <div class="header-left">
-          <div class="header-logo">
-            <span class="logo-text">DashStack</span>
-          </div>
-          
-          <div class="header-search">
-            <el-input
-              v-model="searchText"
-              :placeholder="$t('common.search')"
-              prefix-icon="Search"
-              class="search-input"
-            />
+          <div class="breadcrumb-container">
+            <el-breadcrumb separator="/" class="breadcrumb">
+              <el-breadcrumb-item 
+                v-for="(item, index) in breadcrumbItems" 
+                :key="index"
+                :to="item.path"
+                class="breadcrumb-item"
+              >
+                {{ item.title }}
+              </el-breadcrumb-item>
+            </el-breadcrumb>
           </div>
         </div>
 
@@ -255,12 +255,58 @@ const handleLanguageChange = (lang: string) => {
 
 const activeMenu = computed(() => route.path)
 
-const breadcrumbs = computed(() => {
-  const matched = route.matched.filter((item) => item.meta && item.meta.title)
-  return matched.map((item) => ({
-    path: item.path,
-    title: item.meta.title,
-  }))
+// 面包屑导航
+const breadcrumbItems = computed(() => {
+  const path = route.path
+  const items = [
+    {
+      title: '首页',
+      path: '/dashboard'
+    }
+  ]
+  
+  if (path.startsWith('/video')) {
+    items.push({
+      title: '视频管理',
+      path: '/video'
+    })
+    
+    if (path === '/video/list') {
+      items.push({
+        title: '视频列表',
+        path: '/video/list'
+      })
+    } else if (path === '/video/upload') {
+      items.push({
+        title: '视频上传',
+        path: '/video/upload'
+      })
+    }
+  } else if (path.startsWith('/audio')) {
+    items.push({
+      title: '音频管理',
+      path: '/audio'
+    })
+    
+    if (path === '/audio/list') {
+      items.push({
+        title: '音频列表',
+        path: '/audio/list'
+      })
+    } else if (path === '/audio/upload') {
+      items.push({
+        title: '音频上传',
+        path: '/audio/upload'
+      })
+    }
+  } else if (path === '/order-lists') {
+    items.push({
+      title: '订单列表',
+      path: '/order-lists'
+    })
+  }
+  
+  return items
 })
 
 const toggleSidebar = () => {
@@ -408,28 +454,40 @@ watch(
   gap: 20px;
 }
 
-.header-logo {
+.breadcrumb-container {
   display: flex;
   align-items: center;
-  gap: 12px;
 }
 
-.logo-text {
-  color: #2d3748;
-  font-size: 12px;
-  font-weight: 700;
-  margin: 0;
-  letter-spacing: 0.1em;
+.breadcrumb {
+  color: #606266;
 }
 
-.header-search {
+.breadcrumb :deep(.el-breadcrumb__item) {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.breadcrumb :deep(.el-breadcrumb__item:last-child .el-breadcrumb__inner) {
+  color: #303133;
+  font-weight: 600;
+}
+
+.breadcrumb :deep(.el-breadcrumb__item .el-breadcrumb__inner) {
+  color: #909399;
+  transition: color 0.3s;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 4px;
 }
 
-.search-input {
-  width: 200px;
+.breadcrumb :deep(.el-breadcrumb__item .el-breadcrumb__inner:hover) {
+  color: #409eff;
+}
+
+.breadcrumb :deep(.el-breadcrumb__separator) {
+  color: #c0c4cc;
+  margin: 0 8px;
 }
 
 .header-right {

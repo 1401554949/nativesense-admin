@@ -64,7 +64,8 @@ const messages = {
         warning: 'Warning',
         actions: 'Actions',
         showing: 'Showing',
-        of: 'of'
+        of: 'of',
+        filterByDateRange: 'Filter by date range'
       },
       video: {
         name: 'Video Name',
@@ -97,7 +98,8 @@ const messages = {
         editFeature: 'Edit feature coming soon',
         deleteConfirm: 'Are you sure to delete this video?',
         deleteSuccess: 'Video deleted successfully',
-        uploadSuccess: 'Video uploaded successfully'
+        uploadSuccess: 'Video uploaded successfully',
+        uploading: 'Uploading'
       },
       audio: {
         name: 'Audio Name',
@@ -131,7 +133,8 @@ const messages = {
         editFeature: 'Edit feature coming soon',
         deleteConfirm: 'Are you sure to delete this audio?',
         deleteSuccess: 'Audio deleted successfully',
-        uploadSuccess: 'Audio uploaded successfully'
+        uploadSuccess: 'Audio uploaded successfully',
+        uploading: 'Uploading'
       }
   },
   zh: {
@@ -197,7 +200,8 @@ const messages = {
         warning: '警告',
         actions: '操作',
         showing: '显示',
-        of: '共'
+        of: '共',
+        filterByDateRange: '按日期范围筛选'
       },
       video: {
         name: '视频名称',
@@ -230,7 +234,8 @@ const messages = {
         editFeature: '编辑功能即将推出',
         deleteConfirm: '确定要删除这个视频吗？',
         deleteSuccess: '视频删除成功',
-        uploadSuccess: '视频上传成功'
+        uploadSuccess: '视频上传成功',
+        uploading: '上传中'
       },
       audio: {
         name: '音频名称',
@@ -264,7 +269,8 @@ const messages = {
         editFeature: '编辑功能即将推出',
         deleteConfirm: '确定要删除这个音频吗？',
         deleteSuccess: '音频删除成功',
-        uploadSuccess: '音频上传成功'
+        uploadSuccess: '音频上传成功',
+        uploading: '上传中'
       }
   }
 }
