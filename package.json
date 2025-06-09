@@ -17,10 +17,13 @@
     "@types/axios": "^0.14.4",
     "@types/js-cookie": "^3.0.6",
     "axios": "^1.9.0",
+    "echarts": "^5.6.0",
     "element-plus": "^2.9.11",
     "js-cookie": "^3.0.5",
     "pinia": "^3.0.1",
     "vue": "^3.5.13",
+    "vue-echarts": "^7.0.3",
+    "vue-i18n": "^11.1.5",
     "vue-router": "^4.5.0"
   },
   "devDependencies": {

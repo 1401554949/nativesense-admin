@@ -44,7 +44,7 @@ const router = createRouter({
             {
               path: '/video/list',
               name: 'VideoList',
-              component: () => import('@/views/video/VideoList.vue'),
+              component: () => import('@/views/video/VideoListView.vue'),
               meta: { 
                 title: '视频列表',
                 requireAuth: false 
@@ -73,7 +73,7 @@ const router = createRouter({
             {
               path: '/audio/list',
               name: 'AudioList',
-              component: () => import('@/views/audio/AudioList.vue'),
+              component: () => import('@/views/audio/AudioListView.vue'),
               meta: { 
                 title: '音频列表',
                 requireAuth: false 
