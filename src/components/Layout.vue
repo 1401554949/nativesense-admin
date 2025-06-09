@@ -29,100 +29,24 @@
           <template #title>{{ $t('menu.dashboard') }}</template>
         </el-menu-item>
 
-        <el-sub-menu index="video">
-          <template #title>
-            <el-icon><VideoPlay /></el-icon>
-            <span>{{ $t('menu.video') }}</span>
-          </template>
-          <el-menu-item index="/video/list">{{ $t('menu.videoList') }}</el-menu-item>
-          <el-menu-item index="/video/upload">{{ $t('menu.videoUpload') }}</el-menu-item>
-        </el-sub-menu>
-
-        <el-sub-menu index="audio">
-          <template #title>
-            <el-icon><Headset /></el-icon>
-            <span>{{ $t('menu.audio') }}</span>
-          </template>
-          <el-menu-item index="/audio/list">{{ $t('menu.audioList') }}</el-menu-item>
-          <el-menu-item index="/audio/upload">{{ $t('menu.audioUpload') }}</el-menu-item>
-        </el-sub-menu>
-
-        <el-menu-item index="/products">
-          <el-icon><Grid /></el-icon>
-          <template #title>{{ $t('menu.products') }}</template>
+        <el-menu-item index="/video/list">
+          <el-icon><VideoPlay /></el-icon>
+          <template #title>{{ $t('menu.video') }}</template>
         </el-menu-item>
 
-        <el-menu-item index="/favorites">
-          <el-icon><Star /></el-icon>
-          <template #title>{{ $t('menu.favorites') }}</template>
+        <el-menu-item index="/audio/list">
+          <el-icon><Headset /></el-icon>
+          <template #title>{{ $t('menu.audio') }}</template>
         </el-menu-item>
-
-        <el-menu-item index="/inbox">
-          <el-icon><Message /></el-icon>
-          <template #title>{{ $t('menu.inbox') }}</template>
-        </el-menu-item>
-
-        <el-menu-item index="/order-lists">
-          <el-icon><List /></el-icon>
-          <template #title>{{ $t('menu.orderLists') }}</template>
-        </el-menu-item>
-
-        <el-menu-item index="/product-stock">
-          <el-icon><Box /></el-icon>
-          <template #title>{{ $t('menu.productStock') }}</template>
-        </el-menu-item>
-
-        <div class="menu-divider">
-          <div class="menu-section-title">{{ $t('menu.pages') }}</div>
-        </div>
-
-        <el-menu-item index="/pricing">
-          <el-icon><CreditCard /></el-icon>
-          <template #title>{{ $t('menu.pricing') }}</template>
-        </el-menu-item>
-
-        <el-menu-item index="/calendar">
-          <el-icon><Calendar /></el-icon>
-          <template #title>{{ $t('menu.calendar') }}</template>
-        </el-menu-item>
-
-        <el-menu-item index="/todo">
-          <el-icon><Document /></el-icon>
-          <template #title>{{ $t('menu.todo') }}</template>
-        </el-menu-item>
-
-        <el-menu-item index="/contact">
-          <el-icon><User /></el-icon>
-          <template #title>{{ $t('menu.contact') }}</template>
-        </el-menu-item>
-
-        <el-menu-item index="/invoice">
-          <el-icon><Tickets /></el-icon>
-          <template #title>{{ $t('menu.invoice') }}</template>
-        </el-menu-item>
-
-        <el-menu-item index="/ui-elements">
-          <el-icon><Grid /></el-icon>
-          <template #title>{{ $t('menu.uiElements') }}</template>
-        </el-menu-item>
-
-        <el-menu-item index="/team">
-          <el-icon><UserFilled /></el-icon>
-          <template #title>{{ $t('menu.team') }}</template>
-        </el-menu-item>
-
-        <el-menu-item index="/table">
-          <el-icon><Grid /></el-icon>
-          <template #title>{{ $t('menu.table') }}</template>
-        </el-menu-item>
-
-        <div class="menu-divider">
-          <!-- 设置 -->
-        </div>
 
         <el-menu-item index="/settings">
           <el-icon><Setting /></el-icon>
           <template #title>{{ $t('menu.settings') }}</template>
+        </el-menu-item>
+
+        <el-menu-item index="/profile">
+          <el-icon><User /></el-icon>
+          <template #title>{{ $t('menu.profile') }}</template>
         </el-menu-item>
 
         <el-menu-item index="/logout">
@@ -175,25 +99,15 @@
           </el-dropdown>
 
           <!-- 用户信息 -->
-          <el-dropdown @command="handleUserCommand" class="user-dropdown">
-            <div class="user-info">
-              <el-avatar :size="32" :src="userStore.userInfo?.avatar" class="user-avatar">
-                <img src="https://via.placeholder.com/32x32/4F46E5/FFFFFF?text=MR" alt="User" />
-              </el-avatar>
-              <div class="user-details">
-                <span class="username">{{ userStore.userInfo?.username || 'Moni Roy' }}</span>
-                <span class="user-role">Admin</span>
-              </div>
+          <div class="user-info">
+            <el-avatar :size="32" :src="userStore.userInfo?.avatar" class="user-avatar">
+              <img src="https://via.placeholder.com/32x32/4F46E5/FFFFFF?text=MR" alt="User" />
+            </el-avatar>
+            <div class="user-details">
+              <span class="username">{{ userStore.userInfo?.username || 'Moni Roy' }}</span>
+              <span class="user-role">Admin</span>
             </div>
-
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item command="profile">个人资料</el-dropdown-item>
-                <el-dropdown-item command="settings">设置</el-dropdown-item>
-                <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
+          </div>
         </div>
       </el-header>
 
@@ -265,66 +179,56 @@ const breadcrumbItems = computed(() => {
     }
   ]
   
-  if (path.startsWith('/video')) {
+  // 根据路由路径生成面包屑
+  if (path === '/video/list') {
     items.push({
       title: '视频管理',
-      path: '/video'
+      path: '/video/list'
     })
-    
-    if (path === '/video/list') {
-      items.push({
-        title: '视频列表',
-        path: '/video/list'
-      })
-    } else if (path === '/video/upload') {
-      items.push({
-        title: '视频上传',
-        path: '/video/upload'
-      })
-    }
-  } else if (path.startsWith('/audio')) {
+  } else if (path === '/audio/list') {
     items.push({
       title: '音频管理',
-      path: '/audio'
+      path: '/audio/list'
     })
-    
-    if (path === '/audio/list') {
+  } else if (path === '/profile') {
+    items.push({
+      title: '个人资料',
+      path: '/profile'
+    })
+  } else if (path === '/settings') {
+    items.push({
+      title: '系统设置',
+      path: '/settings'
+    })
+  } else if (path !== '/dashboard') {
+    // 对于其他页面，根据路由名称或路径生成标题
+    const routeName = route.name as string
+    const routeTitle = getRouteTitle(routeName || path)
+    if (routeTitle) {
       items.push({
-        title: '音频列表',
-        path: '/audio/list'
-      })
-    } else if (path === '/audio/upload') {
-      items.push({
-        title: '音频上传',
-        path: '/audio/upload'
+        title: routeTitle,
+        path: path
       })
     }
-  } else if (path === '/order-lists') {
-    items.push({
-      title: '订单列表',
-      path: '/order-lists'
-    })
   }
   
   return items
 })
 
-const toggleSidebar = () => {
-  isCollapse.value = !isCollapse.value
+// 根据路由名称获取页面标题
+const getRouteTitle = (routeName: string): string => {
+  const titleMap: Record<string, string> = {
+    'Dashboard': '仪表盘',
+    'VideoList': '视频管理',
+    'AudioList': '音频管理',
+    'Profile': '个人资料',
+    'Settings': '系统设置'
+  }
+  return titleMap[routeName] || routeName
 }
 
-const handleUserCommand = (command: string) => {
-  switch (command) {
-    case 'profile':
-      // 处理个人资料
-      break
-    case 'settings':
-      // 处理设置
-      break
-    case 'logout':
-      userStore.logout()
-      break
-  }
+const toggleSidebar = () => {
+  isCollapse.value = !isCollapse.value
 }
 
 // 监听路由变化，自动获取用户信息
@@ -525,22 +429,12 @@ watch(
   justify-content: center;
 }
 
-.user-dropdown {
-  margin-right: 10px;
-}
-
 .user-info {
   display: flex;
   align-items: center;
   gap: 8px;
-  cursor: pointer;
   padding: 5px 10px;
   border-radius: 4px;
-  transition: background-color 0.3s;
-}
-
-.user-info:hover {
-  background-color: #f5f7fa;
 }
 
 .user-avatar {

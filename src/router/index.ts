@@ -89,6 +89,24 @@ const router = createRouter({
               }
             }
           ]
+        },
+        {
+          path: '/profile',
+          name: 'Profile',
+          component: () => import('@/views/ProfileView.vue'),
+          meta: { 
+            title: '个人资料',
+            requireAuth: false 
+          }
+        },
+        {
+          path: '/settings',
+          name: 'Settings',
+          component: () => import('@/views/SettingsView.vue'),
+          meta: { 
+            title: '系统设置',
+            requireAuth: false 
+          }
         }
       ]
     },
