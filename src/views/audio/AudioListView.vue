@@ -5,7 +5,7 @@
       <div class="search-section">
         <el-input
           v-model="searchForm.keyword"
-          placeholder="搜索音频..."
+          placeholder="搜索"
           class="search-input"
           clearable
           @keyup.enter="handleSearch"
@@ -19,7 +19,7 @@
       <div class="filter-section">
         <el-select 
           v-model="filters.status" 
-          placeholder="状态：全部"
+          placeholder="状态"
           class="filter-select"
           clearable
         >
@@ -31,7 +31,7 @@
         
         <el-select 
           v-model="filters.date" 
-          placeholder="按日期筛选"
+          placeholder="日期"
           class="filter-select date-filter"
           clearable
         >
@@ -57,7 +57,7 @@
           </template>
         </el-table-column>
         
-        <el-table-column label="音频名称" min-width="250">
+        <el-table-column label="音频标题" min-width="250">
           <template #default="{ row }">
             <div class="audio-info">
               <div class="audio-thumbnail">
