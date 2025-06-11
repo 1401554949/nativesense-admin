@@ -5,7 +5,7 @@
       <div class="search-section">
         <el-input
           v-model="searchForm.keyword"
-          placeholder="搜索"
+          placeholder="搜索音频标题、描述或标签"
           class="search-input"
           clearable
           @keyup.enter="handleSearch"
@@ -26,21 +26,85 @@
           <el-option label="已上架" value="published" />
           <el-option label="已下架" value="draft" />
           <el-option label="处理中" value="processing" />
-          <el-option label="全部" value="all" />
         </el-select>
         
         <el-select 
-          v-model="filters.date" 
-          placeholder="日期"
-          class="filter-select date-filter"
+          v-model="filters.level" 
+          placeholder="等级"
+          class="filter-select"
           clearable
         >
-          <el-option label="今天" value="today" />
-          <el-option label="本周" value="thisWeek" />
-          <el-option label="本月" value="thisMonth" />
-          <el-option label="全部" value="all" />
+          <el-option 
+            v-for="level in metadata?.supportedLevels || []" 
+            :key="level"
+            :label="`等级 ${level}`" 
+            :value="level" 
+          />
+        </el-select>
+
+        <el-select 
+          v-model="filters.type" 
+          placeholder="类型"
+          class="filter-select"
+          clearable
+        >
+          <el-option 
+            v-for="type in metadata?.supportedTypes || []" 
+            :key="type"
+            :label="type" 
+            :value="type" 
+          />
+        </el-select>
+
+        <el-select 
+          v-model="filters.category" 
+          placeholder="分类"
+          class="filter-select"
+          clearable
+        >
+          <el-option 
+            v-for="category in metadata?.supportedCategories || []" 
+            :key="category"
+            :label="category" 
+            :value="category" 
+          />
+        </el-select>
+
+        <el-select 
+          v-model="filters.difficulty" 
+          placeholder="难度"
+          class="filter-select"
+          clearable
+        >
+          <el-option label="简单" value="easy" />
+          <el-option label="中等" value="medium" />
+          <el-option label="困难" value="hard" />
         </el-select>
       </div>
+    </div>
+    
+    <!-- 统计信息 -->
+    <div v-if="stats" class="stats-section">
+      <el-card>
+        <div class="stats-content">
+          <div class="stat-item">
+            <span class="stat-label">音频总数</span>
+            <span class="stat-value">{{ stats.totalCount }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">总时长</span>
+            <span class="stat-value">{{ formatDuration(stats.totalDuration) }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">平均时长</span>
+            <span class="stat-value">{{ formatDuration(stats.avgDuration) }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">总播放次数</span>
+            <span class="stat-value">{{ stats.viewStats.totalViews }}</span>
+          </div>
+        </div>
+      </el-card>
     </div>
     
     <!-- 音频列表 -->
@@ -57,7 +121,7 @@
           </template>
         </el-table-column>
         
-        <el-table-column label="音频标题" min-width="250">
+        <el-table-column label="音频信息" min-width="280">
           <template #default="{ row }">
             <div class="audio-info">
               <div class="audio-thumbnail">
@@ -72,16 +136,52 @@
                 </div>
               </div>
               <div class="audio-details">
-                <p class="audio-name">{{ row.name }}</p>
-                <p class="audio-format">{{ row.format.toUpperCase() }} • {{ formatFileSize(row.size) }}</p>
+                <p class="audio-title">{{ row.title }}</p>
+                <p class="audio-meta">{{ row.format.toUpperCase() }} • {{ formatFileSize(row.size) }}</p>
+                <div class="audio-tags">
+                  <el-tag 
+                    v-for="tag in row.tags.slice(0, 3)" 
+                    :key="tag" 
+                    size="small" 
+                    type="info"
+                  >
+                    {{ tag }}
+                  </el-tag>
+                  <el-tag v-if="row.tags.length > 3" size="small" type="info">
+                    +{{ row.tags.length - 3 }}
+                  </el-tag>
+                </div>
               </div>
             </div>
           </template>
         </el-table-column>
         
-        <el-table-column label="上传日期" width="120">
+        <el-table-column label="等级" width="80">
           <template #default="{ row }">
-            {{ formatDateShort(row.createdAt) }}
+            <el-tag type="primary">{{ row.level }}</el-tag>
+          </template>
+        </el-table-column>
+        
+        <el-table-column label="类型" width="100">
+          <template #default="{ row }">
+            {{ row.type }}
+          </template>
+        </el-table-column>
+        
+        <el-table-column label="分类" width="100">
+          <template #default="{ row }">
+            {{ row.category }}
+          </template>
+        </el-table-column>
+        
+        <el-table-column label="难度" width="80">
+          <template #default="{ row }">
+            <el-tag 
+              :type="getDifficultyType(row.difficulty)"
+              size="small"
+            >
+              {{ getDifficultyLabel(row.difficulty) }}
+            </el-tag>
           </template>
         </el-table-column>
         
@@ -91,13 +191,13 @@
           </template>
         </el-table-column>
         
-        <el-table-column label="格式" width="80">
+        <el-table-column label="播放次数" width="100">
           <template #default="{ row }">
-            {{ row.format.toUpperCase() }}
+            {{ row.viewCount || 0 }}
           </template>
         </el-table-column>
         
-        <el-table-column label="状态" width="120">
+        <el-table-column label="状态" width="100">
           <template #default="{ row }">
             <el-tag 
               :type="getStatusType(row.status)" 
@@ -105,6 +205,12 @@
             >
               {{ getStatusLabel(row.status) }}
             </el-tag>
+          </template>
+        </el-table-column>
+        
+        <el-table-column label="上传日期" width="120">
+          <template #default="{ row }">
+            {{ formatDateShort(row.createdAt) }}
           </template>
         </el-table-column>
         
@@ -180,7 +286,7 @@
     <el-dialog
       v-model="showUploadDialog"
       title="上传音频"
-      width="600px"
+      width="700px"
       @close="resetUploadForm"
     >
       <el-form :model="uploadForm" :rules="uploadRules" ref="uploadFormRef" label-width="100px">
@@ -197,10 +303,80 @@
           />
         </el-form-item>
 
-        <el-form-item label="上架状态" prop="status">
-          <el-select v-model="uploadForm.status" style="width: 100%">
-            <el-option label="已上架" value="published" />
-            <el-option label="已下架" value="draft" />
+        <el-row :gutter="16">
+          <el-col :span="8">
+            <el-form-item label="等级" prop="level">
+              <el-select v-model="uploadForm.level" style="width: 100%">
+                <el-option 
+                  v-for="level in metadata?.supportedLevels || [1, 2, 3]" 
+                  :key="level"
+                  :label="`等级 ${level}`" 
+                  :value="level" 
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="类型" prop="type">
+              <el-select v-model="uploadForm.type" style="width: 100%">
+                <el-option 
+                  v-for="type in metadata?.supportedTypes || ['education', 'entertainment']" 
+                  :key="type"
+                  :label="type" 
+                  :value="type" 
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="难度" prop="difficulty">
+              <el-select v-model="uploadForm.difficulty" style="width: 100%">
+                <el-option label="简单" value="easy" />
+                <el-option label="中等" value="medium" />
+                <el-option label="困难" value="hard" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item label="分类" prop="category">
+              <el-select v-model="uploadForm.category" style="width: 100%">
+                <el-option 
+                  v-for="category in metadata?.supportedCategories || ['general']" 
+                  :key="category"
+                  :label="category" 
+                  :value="category" 
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="上架状态" prop="status">
+              <el-select v-model="uploadForm.status" style="width: 100%">
+                <el-option label="已上架" value="published" />
+                <el-option label="已下架" value="draft" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-form-item label="标签" prop="tags">
+          <el-select
+            v-model="uploadForm.tags"
+            multiple
+            filterable
+            allow-create
+            placeholder="请选择或输入标签"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="tag in ['音乐', '播客', '教育', '娱乐', '放松']"
+              :key="tag"
+              :label="tag"
+              :value="tag"
+            />
           </el-select>
         </el-form-item>
         
@@ -248,28 +424,47 @@
       </template>
     </el-dialog>
     
-    <!-- 预览对话框 -->
+    <!-- 播放对话框 -->
     <el-dialog
       v-model="previewDialogVisible"
-      title="音频预览"
+      title="音频播放"
       width="60%"
       align-center
     >
       <div v-if="previewAudio" class="preview-content">
-        <audio
-          :src="previewAudio.url"
-          controls
-          style="width: 100%;"
-        >
-          您的浏览器不支持音频播放
-        </audio>
+        <div class="audio-player">
+          <audio
+            ref="audioPlayerRef"
+            :src="previewAudio.url"
+            controls
+            style="width: 100%"
+          >
+            您的浏览器不支持音频播放
+          </audio>
+        </div>
         <div class="preview-info">
-          <h3>{{ previewAudio.name }}</h3>
-          <p>文件大小: {{ formatFileSize(previewAudio.size) }}</p>
-          <p>格式: {{ previewAudio.format.toUpperCase() }}</p>
-          <p v-if="previewAudio.duration">时长: {{ formatDuration(previewAudio.duration) }}</p>
-          <p v-if="previewAudio.description">描述: {{ previewAudio.description }}</p>
-          <p>上传时间: {{ formatDate(previewAudio.createdAt) }}</p>
+          <h3>{{ previewAudio.title }}</h3>
+          <p><strong>描述:</strong> {{ previewAudio.description }}</p>
+          <p><strong>文件大小:</strong> {{ formatFileSize(previewAudio.size) }}</p>
+          <p><strong>格式:</strong> {{ previewAudio.format.toUpperCase() }}</p>
+          <p><strong>时长:</strong> {{ formatDuration(previewAudio.duration) }}</p>
+          <p><strong>等级:</strong> {{ previewAudio.level }}</p>
+          <p><strong>类型:</strong> {{ previewAudio.type }}</p>
+          <p><strong>分类:</strong> {{ previewAudio.category }}</p>
+          <p><strong>难度:</strong> {{ getDifficultyLabel(previewAudio.difficulty) }}</p>
+          <p><strong>播放次数:</strong> {{ previewAudio.viewCount || 0 }}</p>
+          <p><strong>上传时间:</strong> {{ formatDate(previewAudio.createdAt) }}</p>
+          <div class="preview-tags">
+            <strong>标签:</strong>
+            <el-tag 
+              v-for="tag in previewAudio.tags" 
+              :key="tag" 
+              type="info" 
+              style="margin-left: 8px;"
+            >
+              {{ tag }}
+            </el-tag>
+          </div>
         </div>
       </div>
     </el-dialog>
@@ -278,7 +473,7 @@
     <el-dialog
       v-model="editDialogVisible"
       title="编辑音频"
-      width="600px"
+      width="700px"
       @close="resetEditForm"
     >
       <el-form :model="editForm" :rules="editRules" ref="editFormRef" label-width="100px">
@@ -295,11 +490,81 @@
           />
         </el-form-item>
 
-        <el-form-item label="上架状态" prop="status">
-          <el-select v-model="editForm.status" style="width: 100%">
-            <el-option label="已上架" value="published" />
-            <el-option label="已下架" value="draft" />
-            <el-option label="处理中" value="processing" />
+        <el-row :gutter="16">
+          <el-col :span="8">
+            <el-form-item label="等级" prop="level">
+              <el-select v-model="editForm.level" style="width: 100%">
+                <el-option 
+                  v-for="level in metadata?.supportedLevels || [1, 2, 3]" 
+                  :key="level"
+                  :label="`等级 ${level}`" 
+                  :value="level" 
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="类型" prop="type">
+              <el-select v-model="editForm.type" style="width: 100%">
+                <el-option 
+                  v-for="type in metadata?.supportedTypes || ['education', 'entertainment']" 
+                  :key="type"
+                  :label="type" 
+                  :value="type" 
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="难度" prop="difficulty">
+              <el-select v-model="editForm.difficulty" style="width: 100%">
+                <el-option label="简单" value="easy" />
+                <el-option label="中等" value="medium" />
+                <el-option label="困难" value="hard" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item label="分类" prop="category">
+              <el-select v-model="editForm.category" style="width: 100%">
+                <el-option 
+                  v-for="category in metadata?.supportedCategories || ['general']" 
+                  :key="category"
+                  :label="category" 
+                  :value="category" 
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="上架状态" prop="status">
+              <el-select v-model="editForm.status" style="width: 100%">
+                <el-option label="已上架" value="published" />
+                <el-option label="已下架" value="draft" />
+                <el-option label="处理中" value="processing" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-form-item label="标签" prop="tags">
+          <el-select
+            v-model="editForm.tags"
+            multiple
+            filterable
+            allow-create
+            placeholder="请选择或输入标签"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="tag in ['音乐', '播客', '教育', '娱乐', '放松']"
+              :key="tag"
+              :label="tag"
+              :value="tag"
+            />
           </el-select>
         </el-form-item>
       </el-form>
@@ -326,9 +591,14 @@ import {
   editAudioApi, 
   deleteAudioApi, 
   downloadAudioApi,
+  getAudioMetadataApi,
+  getAudioStatsApi,
   type MediaFile,
   type UploadParams,
-  type EditParams
+  type EditParams,
+  type MediaFilter,
+  type MediaMetadata,
+  type MediaStats
 } from '@/api/media'
 
 // 使用MediaFile类型
@@ -343,6 +613,9 @@ const uploading = ref(false)
 const uploadProgress = ref(0)
 const editDialogVisible = ref(false)
 const editLoading = ref(false)
+const metadata = ref<MediaMetadata | null>(null)
+const stats = ref<MediaStats | null>(null)
+const audioPlayerRef = ref()
 
 const searchForm = reactive({
   keyword: ''
@@ -350,7 +623,10 @@ const searchForm = reactive({
 
 const filters = reactive({
   status: '',
-  date: ''
+  level: null as number | null,
+  type: '',
+  category: '',
+  difficulty: ''
 })
 
 const pagination = reactive({
@@ -363,22 +639,44 @@ const pagination = reactive({
 const uploadForm = reactive({
   title: '',
   description: '',
-  status: 'published',
-  file: null
+  status: 'published' as 'published' | 'draft',
+  level: 1,
+  type: 'education',
+  category: 'general',
+  difficulty: 'easy' as 'easy' | 'medium' | 'hard',
+  tags: [] as string[],
+  file: null as File | null
 })
 
 const uploadRules = {
   title: [
     { required: true, message: '请输入音频标题', trigger: 'blur' }
+  ],
+  level: [
+    { required: true, message: '请选择等级', trigger: 'change' }
+  ],
+  type: [
+    { required: true, message: '请选择类型', trigger: 'change' }
+  ],
+  category: [
+    { required: true, message: '请选择分类', trigger: 'change' }
+  ],
+  difficulty: [
+    { required: true, message: '请选择难度', trigger: 'change' }
   ]
 }
 
 // 编辑表单
 const editForm = reactive({
-  id: 0,
+  id: '',
   title: '',
   description: '',
-  status: 'published' as 'published' | 'draft' | 'processing'
+  status: 'published' as 'published' | 'draft' | 'processing',
+  level: 1,
+  type: 'education',
+  category: 'general',
+  difficulty: 'easy' as 'easy' | 'medium' | 'hard',
+  tags: [] as string[]
 })
 
 const editRules = {
@@ -399,10 +697,15 @@ const formatFileSize = (size: number): string => {
   return parseFloat((size / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
-const formatDuration = (duration?: number): string => {
+const formatDuration = (duration: number): string => {
   if (!duration) return '-'
-  const minutes = Math.floor(duration / 60)
+  const hours = Math.floor(duration / 3600)
+  const minutes = Math.floor((duration % 3600) / 60)
   const seconds = Math.floor(duration % 60)
+  
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+  }
   return `${minutes}:${seconds.toString().padStart(2, '0')}`
 }
 
@@ -444,6 +747,37 @@ const getStatusLabel = (status: string): string => {
   }
 }
 
+const getDifficultyType = (difficulty: string): string => {
+  switch (difficulty) {
+    case 'easy': return 'success'
+    case 'medium': return 'warning'
+    case 'hard': return 'danger'
+    default: return 'info'
+  }
+}
+
+const getDifficultyLabel = (difficulty: string): string => {
+  switch (difficulty) {
+    case 'easy': return '简单'
+    case 'medium': return '中等'
+    case 'hard': return '困难'
+    default: return difficulty
+  }
+}
+
+const buildFilter = (): MediaFilter => {
+  const filter: MediaFilter = {}
+  
+  if (filters.status) filter.status = [filters.status]
+  if (filters.level) filter.levels = [filters.level]
+  if (filters.type) filter.types = [filters.type]
+  if (filters.category) filter.categories = [filters.category]
+  if (filters.difficulty) filter.difficulties = [filters.difficulty]
+  if (searchForm.keyword) filter.searchQuery = searchForm.keyword
+  
+  return filter
+}
+
 const loadAudioList = async () => {
   loading.value = true
   try {
@@ -451,8 +785,7 @@ const loadAudioList = async () => {
       page: pagination.page,
       pageSize: pagination.pageSize,
       keyword: searchForm.keyword,
-      status: filters.status,
-      date: filters.date
+      filter: buildFilter()
     })
     
     audioList.value = response.list
@@ -462,6 +795,22 @@ const loadAudioList = async () => {
     ElMessage.error('加载失败')
   } finally {
     loading.value = false
+  }
+}
+
+const loadMetadata = async () => {
+  try {
+    metadata.value = await getAudioMetadataApi()
+  } catch (error) {
+    console.error('加载元数据失败:', error)
+  }
+}
+
+const loadStats = async () => {
+  try {
+    stats.value = await getAudioStatsApi()
+  } catch (error) {
+    console.error('加载统计信息失败:', error)
   }
 }
 
@@ -488,9 +837,14 @@ const handlePreview = (audio: AudioFile) => {
 
 const handleEdit = (audio: AudioFile) => {
   editForm.id = audio.id
-  editForm.title = audio.name
+  editForm.title = audio.title
   editForm.description = audio.description
   editForm.status = audio.status
+  editForm.level = audio.level
+  editForm.type = audio.type
+  editForm.category = audio.category
+  editForm.difficulty = audio.difficulty
+  editForm.tags = [...audio.tags]
   editDialogVisible.value = true
 }
 
@@ -498,7 +852,7 @@ const handleDownload = async (audio: AudioFile) => {
   try {
     await downloadAudioApi({
       id: audio.id,
-      name: audio.name
+      name: audio.title
     })
     ElMessage.success('开始下载')
   } catch (error) {
@@ -510,7 +864,7 @@ const handleDownload = async (audio: AudioFile) => {
 const handleDelete = async (audio: AudioFile) => {
   try {
     await ElMessageBox.confirm(
-      `确定要删除音频 "${audio.name}" 吗？此操作不可恢复。`,
+      `确定要删除音频 "${audio.title}" 吗？此操作不可恢复。`,
       '确认删除',
       {
         confirmButtonText: '确定',
@@ -523,6 +877,7 @@ const handleDelete = async (audio: AudioFile) => {
     
     ElMessage.success('删除成功')
     loadAudioList()
+    loadStats() // 重新加载统计信息
   } catch (error) {
     if (error !== 'cancel') {
       console.error('删除失败:', error)
@@ -539,16 +894,26 @@ const resetUploadForm = () => {
   uploadForm.title = ''
   uploadForm.description = ''
   uploadForm.status = 'published'
+  uploadForm.level = 1
+  uploadForm.type = 'education'
+  uploadForm.category = 'general'
+  uploadForm.difficulty = 'easy'
+  uploadForm.tags = []
   uploadForm.file = null
   fileList.value = []
   uploadProgress.value = 0
 }
 
 const resetEditForm = () => {
-  editForm.id = 0
+  editForm.id = ''
   editForm.title = ''
   editForm.description = ''
-  editForm.status = 'published' as 'published' | 'draft' | 'processing'
+  editForm.status = 'published'
+  editForm.level = 1
+  editForm.type = 'education'
+  editForm.category = 'general'
+  editForm.difficulty = 'easy'
+  editForm.tags = []
 }
 
 const handleUpload = async () => {
@@ -566,7 +931,12 @@ const handleUpload = async () => {
     const uploadParams: UploadParams = {
       title: uploadForm.title,
       description: uploadForm.description,
-      status: uploadForm.status as 'published' | 'draft',
+      status: uploadForm.status,
+      level: uploadForm.level,
+      type: uploadForm.type,
+      category: uploadForm.category,
+      difficulty: uploadForm.difficulty,
+      tags: uploadForm.tags,
       file: uploadForm.file
     }
     
@@ -579,6 +949,7 @@ const handleUpload = async () => {
     ElMessage.success('上传成功')
     resetUploadForm()
     loadAudioList()
+    loadStats() // 重新加载统计信息
   } catch (error) {
     console.error('上传失败:', error)
     ElMessage.error('上传失败')
@@ -597,7 +968,12 @@ const handleSaveEdit = async () => {
       id: editForm.id,
       title: editForm.title,
       description: editForm.description,
-      status: editForm.status
+      status: editForm.status,
+      level: editForm.level,
+      type: editForm.type,
+      category: editForm.category,
+      difficulty: editForm.difficulty,
+      tags: editForm.tags
     }
     
     await editAudioApi(editParams)
@@ -616,6 +992,8 @@ const handleSaveEdit = async () => {
 
 onMounted(() => {
   loadAudioList()
+  loadMetadata()
+  loadStats()
 })
 </script>
 
@@ -634,11 +1012,13 @@ onMounted(() => {
   gap: 16px;
   margin-bottom: 24px;
   padding: 16px 0;
+  flex-wrap: wrap;
 }
 
 .search-section {
   flex: 1;
-  max-width: 300px;
+  max-width: 400px;
+  min-width: 300px;
 }
 
 .search-input {
@@ -652,11 +1032,12 @@ onMounted(() => {
 
 .filter-section {
   display: flex;
-  gap: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .filter-select {
-  min-width: 140px;
+  min-width: 120px;
 }
 
 .filter-select :deep(.el-input__wrapper) {
@@ -664,8 +1045,33 @@ onMounted(() => {
   border: 1px solid #e1e5e9;
 }
 
-.date-filter {
-  min-width: 180px;
+/* 统计信息样式 */
+.stats-section {
+  margin-bottom: 24px;
+}
+
+.stats-content {
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #666;
+}
+
+.stat-value {
+  font-size: 20px;
+  font-weight: bold;
+  color: #333;
 }
 
 /* 表格容器 */
@@ -674,6 +1080,7 @@ onMounted(() => {
   border-radius: 8px;
   overflow: hidden;
   border: 1px solid #f0f0f0;
+  margin-bottom: 24px;
 }
 
 .audio-table {
@@ -692,30 +1099,19 @@ onMounted(() => {
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  padding: 16px 12px;
-}
-
-.audio-table :deep(.el-table__body tr) {
-  border-bottom: 1px solid #f0f0f0;
 }
 
 .audio-table :deep(.el-table__body td) {
+  border-bottom: 1px solid #f5f5f5;
   padding: 16px 12px;
-  border-bottom: 1px solid #f0f0f0;
 }
 
-.audio-table :deep(.el-table__body tr:hover td) {
-  background-color: #f9fafb;
-}
-
-/* ID 列样式 */
 .table-id {
   font-weight: 600;
-  color: #374151;
-  font-size: 14px;
+  color: #6b7280;
+  font-size: 12px;
 }
 
-/* 音频信息样式 */
 .audio-info {
   display: flex;
   align-items: center;
@@ -723,59 +1119,71 @@ onMounted(() => {
 }
 
 .audio-thumbnail {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
+  width: 80px;
+  height: 60px;
+  border-radius: 6px;
+  overflow: hidden;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
   flex-shrink: 0;
   position: relative;
 }
 
 .audio-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.audio-icon .el-icon {
   font-size: 20px;
-  z-index: 2;
+  color: white;
 }
 
 .audio-wave {
-  position: absolute;
-  bottom: 6px;
-  left: 50%;
-  transform: translateX(-50%);
   display: flex;
-  gap: 1px;
-  z-index: 1;
+  gap: 2px;
+  align-items: end;
 }
 
 .audio-wave span {
   width: 2px;
-  height: 8px;
   background: rgba(255, 255, 255, 0.6);
   border-radius: 1px;
   animation: wave 1.5s ease-in-out infinite;
 }
 
-.audio-wave span:nth-child(2) {
-  animation-delay: 0.1s;
+.audio-wave span:nth-child(1) {
+  height: 8px;
+  animation-delay: 0s;
 }
 
-.audio-wave span:nth-child(3) {
+.audio-wave span:nth-child(2) {
+  height: 12px;
   animation-delay: 0.2s;
 }
 
+.audio-wave span:nth-child(3) {
+  height: 6px;
+  animation-delay: 0.4s;
+}
+
 .audio-wave span:nth-child(4) {
-  animation-delay: 0.3s;
+  height: 10px;
+  animation-delay: 0.6s;
 }
 
 @keyframes wave {
   0%, 100% {
-    height: 4px;
+    transform: scaleY(1);
+    opacity: 0.6;
   }
   50% {
-    height: 12px;
+    transform: scaleY(1.5);
+    opacity: 1;
   }
 }
 
@@ -784,69 +1192,54 @@ onMounted(() => {
   min-width: 0;
 }
 
-.audio-name {
-  font-size: 14px;
-  font-weight: 500;
-  color: #111827;
+.audio-title {
+  font-weight: 600;
+  color: #1f2937;
   margin: 0 0 4px 0;
-  line-height: 1.3;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: 14px;
+  line-height: 1.4;
 }
 
-.audio-format {
-  font-size: 12px;
+.audio-meta {
   color: #6b7280;
-  margin: 0;
-  line-height: 1.2;
+  font-size: 12px;
+  margin: 0 0 8px 0;
 }
 
-/* 操作按钮样式 */
+.audio-tags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.audio-tags .el-tag {
+  font-size: 10px;
+  height: 20px;
+  line-height: 18px;
+}
+
+.status-tag {
+  font-size: 11px;
+  padding: 2px 8px;
+}
+
 .action-buttons {
   display: flex;
   gap: 8px;
   justify-content: center;
-  align-items: center;
+  flex-wrap: wrap;
 }
 
 .action-buttons .el-button {
-  margin: 0;
-  padding: 4px 8px;
+  padding: 6px 12px;
   font-size: 12px;
-  border-radius: 4px;
 }
 
-/* 状态标签样式 */
-.status-tag {
-  border-radius: 20px;
-  padding: 4px 12px;
-  font-size: 12px;
-  font-weight: 500;
-  border: none;
-}
-
-.status-tag.el-tag--warning {
-  background-color: #fef3c7;
-  color: #92400e;
-}
-
-.status-tag.el-tag--success {
-  background-color: #d1fae5;
-  color: #065f46;
-}
-
-.status-tag.el-tag--info {
-  background-color: #e0e7ff;
-  color: #3730a3;
-}
-
-/* 分页容器样式 */
+/* 分页样式 */
 .pagination-container {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 24px;
   padding: 16px 0;
 }
 
@@ -858,28 +1251,28 @@ onMounted(() => {
 /* 上传悬浮按钮 */
 .upload-fab-container {
   position: fixed;
-  bottom: 80px;
-  right: 40px;
-  z-index: 999;
+  bottom: 32px;
+  right: 32px;
+  z-index: 1000;
 }
 
 .upload-fab {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
 }
 
 .upload-fab:hover {
-  transform: scale(1.1);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
 .upload-fab-tooltip {
   position: absolute;
   top: 50%;
-  right: 70px;
+  right: 64px;
   transform: translateY(-50%);
   background: rgba(0, 0, 0, 0.8);
   color: white;
@@ -888,19 +1281,15 @@ onMounted(() => {
   font-size: 12px;
   white-space: nowrap;
   opacity: 0;
-  pointer-events: none;
   transition: opacity 0.3s ease;
+  pointer-events: none;
 }
 
 .upload-fab-container:hover .upload-fab-tooltip {
   opacity: 1;
 }
 
-/* 上传对话框样式 */
-.file-upload-item {
-  grid-column: 1 / -1;
-}
-
+/* 上传容器 */
 .upload-container {
   width: 100%;
 }
@@ -909,73 +1298,84 @@ onMounted(() => {
   width: 100%;
 }
 
-.upload-demo :deep(.el-upload) {
-  width: 100%;
-}
-
 .upload-demo :deep(.el-upload-dragger) {
+  border: 2px dashed #d9d9d9;
+  border-radius: 8px;
   width: 100%;
   height: 180px;
-  border: 2px dashed #d9d9d9;
-  border-radius: 6px;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-  transition: border-color 0.3s;
+  transition: border-color 0.3s ease;
 }
 
 .upload-demo :deep(.el-upload-dragger:hover) {
   border-color: #409eff;
 }
 
-/* 预览对话框样式 */
+/* 预览内容 */
 .preview-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.audio-player {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
   text-align: center;
 }
 
 .preview-info {
-  margin-top: 20px;
-  text-align: left;
+  background: #f8f9fa;
+  padding: 16px;
+  border-radius: 8px;
 }
 
 .preview-info h3 {
-  font-size: 18px;
-  font-weight: 600;
-  color: #111827;
-  margin: 0 0 12px 0;
+  margin: 0 0 16px 0;
+  color: #1f2937;
 }
 
 .preview-info p {
-  font-size: 14px;
-  color: #6b7280;
-  margin: 6px 0;
+  margin: 8px 0;
+  color: #4b5563;
   line-height: 1.5;
+}
+
+.preview-tags {
+  margin-top: 12px;
+}
+
+.preview-tags strong {
+  color: #374151;
+}
+
+/* 文件上传项 */
+.file-upload-item {
+  margin-bottom: 0;
 }
 
 /* 响应式设计 */
 @media (max-width: 768px) {
-  .audio-list {
-    padding: 16px;
-  }
-  
   .filters {
     flex-direction: column;
-    gap: 16px;
     align-items: stretch;
   }
   
+  .search-section {
+    max-width: none;
+  }
+  
   .filter-section {
-    flex-direction: column;
-    gap: 12px;
+    justify-content: space-between;
   }
   
-  .audio-info {
-    gap: 8px;
+  .filter-select {
+    flex: 1;
+    min-width: 100px;
   }
   
-  .audio-thumbnail {
-    width: 40px;
-    height: 40px;
+  .stats-content {
+    justify-content: space-around;
   }
   
   .action-buttons {
@@ -983,34 +1383,9 @@ onMounted(() => {
     gap: 4px;
   }
   
-  .action-buttons .el-button {
-    width: 100%;
-  }
-  
-  .pagination-container {
-    flex-direction: column;
-    gap: 16px;
-    text-align: center;
-  }
-  
   .upload-fab-container {
     bottom: 20px;
     right: 20px;
   }
 }
-
-@media (max-width: 480px) {
-  .audio-table :deep(.el-table__header th),
-  .audio-table :deep(.el-table__body td) {
-    padding: 12px 8px;
-  }
-  
-  .audio-name {
-    font-size: 13px;
-  }
-  
-  .audio-format {
-    font-size: 11px;
-  }
-}
-</style>
+</style> 

@@ -65,7 +65,7 @@
                   <el-icon v-else class="default-thumbnail"><VideoPlay /></el-icon>
                 </div>
                 <div class="video-details">
-                  <p class="video-name">{{ row.name }}</p>
+                  <p class="video-name">{{ row.title }}</p>
                   <p class="video-format">{{ row.format.toUpperCase() }} • {{ formatFileSize(row.size) }}</p>
                 </div>
               </div>
@@ -311,22 +311,27 @@
   
   <script setup lang="ts">
   import { ref, reactive, onMounted } from 'vue'
-  import { ElMessage, ElMessageBox } from 'element-plus'
-  import { Search, VideoPlay, Plus, UploadFilled } from '@element-plus/icons-vue'
-  
-  interface VideoFile {
-    id: number
-    name: string
-    url: string
-    size: number
-    duration?: number
-    format: string
-    status: string
-    description: string
-    thumbnail?: string
-    createdAt: string
-    updatedAt: string
-  }
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Search, VideoPlay, Plus, UploadFilled } from '@element-plus/icons-vue'
+import { 
+  getVideoListApi, 
+  uploadVideoApi, 
+  editVideoApi, 
+  deleteVideoApi, 
+  downloadVideoApi,
+  getVideoMetadataApi,
+  getVideoStatsApi,
+  getVideosByLevelApi,
+  type MediaFile,
+  type UploadParams,
+  type EditParams,
+  type MediaFilter,
+  type MediaMetadata,
+  type MediaStats
+} from '@/api/media'
+
+// 使用MediaFile类型
+type VideoFile = MediaFile
   
   const loading = ref(false)
   const videoList = ref<VideoFile[]>([])
@@ -344,7 +349,11 @@
   
   const filters = reactive({
     status: '',
-    date: ''
+    date: '',
+    level: '',
+    type: '',
+    category: '',
+    difficulty: ''
   })
   
   const pagination = reactive({
@@ -354,12 +363,17 @@
   })
   
   // 上传表单
-  const uploadForm = reactive({
-    title: '',
-    description: '',
-    status: 'published',
-    file: null
-  })
+const uploadForm = reactive({
+  title: '',
+  description: '',
+  status: 'published',
+  level: 1,
+  type: 'education',
+  category: 'general',
+  difficulty: 'easy',
+  tags: [],
+  file: null
+})
   
   const uploadRules = {
     title: [
@@ -368,12 +382,17 @@
   }
   
   // 编辑表单
-  const editForm = reactive({
-    id: 0,
-    title: '',
-    description: '',
-    status: 'published'
-  })
+const editForm = reactive({
+  id: '',
+  title: '',
+  description: '',
+  status: 'published' as 'published' | 'draft' | 'processing',
+  level: 1,
+  type: 'education',
+  category: 'general',
+  difficulty: 'easy' as 'easy' | 'medium' | 'hard',
+  tags: [] as string[]
+})
   
   const editRules = {
     title: [
@@ -441,77 +460,24 @@
   const loadVideoList = async () => {
     loading.value = true
     try {
-      // 模拟API调用
-      await new Promise(resolve => setTimeout(resolve, 500))
+      const filter: MediaFilter = {
+        status: filters.status ? [filters.status] : undefined,
+        levels: filters.level ? [parseInt(filters.level)] : undefined,
+        types: filters.type ? [filters.type] : undefined,
+        categories: filters.category ? [filters.category] : undefined,
+        difficulties: filters.difficulty ? [filters.difficulty] : undefined,
+        searchQuery: searchForm.keyword
+      }
+
+      const response = await getVideoListApi({
+        page: pagination.page,
+        pageSize: pagination.pageSize,
+        keyword: searchForm.keyword,
+        filter
+      })
       
-      videoList.value = [
-        {
-          id: 1001,
-          name: '产品介绍宣传片',
-          url: '/mock/video1.mp4',
-          size: 1024 * 1024 * 45,
-          duration: 320,
-          format: 'mp4',
-          status: 'published',
-          description: '公司最新产品的详细介绍和演示视频，展示了产品的主要功能和优势',
-          thumbnail: '/mock/thumb1.jpg',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        {
-          id: 1002,
-          name: '企业文化纪录片',
-          url: '/mock/video2.mp4',
-          size: 1024 * 1024 * 89,
-          duration: 680,
-          format: 'mp4',
-          status: 'processing',
-          description: '记录公司发展历程和企业文化的纪录片，包含员工访谈和办公环境展示',
-          thumbnail: '/mock/thumb2.jpg',
-          createdAt: new Date(Date.now() - 86400000).toISOString(),
-          updatedAt: new Date(Date.now() - 86400000).toISOString()
-        },
-        {
-          id: 1003,
-          name: '培训教学视频',
-          url: '/mock/video3.mp4',
-          size: 1024 * 1024 * 120,
-          duration: 1200,
-          format: 'mp4',
-          status: 'published',
-          description: '新员工入职培训视频，包含公司制度介绍和工作流程说明',
-          thumbnail: '/mock/thumb3.jpg',
-          createdAt: new Date(Date.now() - 172800000).toISOString(),
-          updatedAt: new Date(Date.now() - 172800000).toISOString()
-        },
-        {
-          id: 1004,
-          name: '活动直播回放',
-          url: '/mock/video4.mp4',
-          size: 1024 * 1024 * 250,
-          duration: 3600,
-          format: 'mp4',
-          status: 'draft',
-          description: '年度大会活动的完整直播回放，包含领导致辞和颁奖典礼',
-          thumbnail: '/mock/thumb4.jpg',
-          createdAt: new Date(Date.now() - 259200000).toISOString(),
-          updatedAt: new Date(Date.now() - 259200000).toISOString()
-        },
-        {
-          id: 1005,
-          name: '技术分享会议',
-          url: '/mock/video5.mp4',
-          size: 1024 * 1024 * 180,
-          duration: 2400,
-          format: 'mp4',
-          status: 'published',
-          description: '技术团队内部分享会议录像，包含最新技术趋势和项目经验分享',
-          thumbnail: '/mock/thumb5.jpg',
-          createdAt: new Date(Date.now() - 345600000).toISOString(),
-          updatedAt: new Date(Date.now() - 345600000).toISOString()
-        }
-      ]
-      pagination.total = 50
+      videoList.value = response.list
+      pagination.total = response.total
     } catch (error) {
       console.error('加载视频列表失败:', error)
       ElMessage.error('加载失败')
@@ -543,25 +509,29 @@
   
   const handleEdit = (video: VideoFile) => {
     editForm.id = video.id
-    editForm.title = video.name
+    editForm.title = video.title
     editForm.description = video.description
     editForm.status = video.status
     editDialogVisible.value = true
   }
   
-  const handleDownload = (video: VideoFile) => {
-    // 创建下载链接
-    const link = document.createElement('a')
-    link.href = video.url
-    link.download = video.name
-    link.click()
-    ElMessage.success('开始下载')
+  const handleDownload = async (video: VideoFile) => {
+    try {
+      await downloadVideoApi({
+        id: video.id,
+        name: video.title
+      })
+      ElMessage.success('开始下载')
+    } catch (error) {
+      console.error('下载失败:', error)
+      ElMessage.error('下载失败')
+    }
   }
   
   const handleDelete = async (video: VideoFile) => {
     try {
       await ElMessageBox.confirm(
-        `确定要删除视频 "${video.name}" 吗？此操作不可恢复。`,
+        `确定要删除视频 "${video.title}" 吗？此操作不可恢复。`,
         '确认删除',
         {
           confirmButtonText: '确定',
@@ -570,14 +540,14 @@
         }
       )
       
-      // 模拟删除API调用
-      await new Promise(resolve => setTimeout(resolve, 500))
+      await deleteVideoApi(video.id)
       
       ElMessage.success('删除成功')
       loadVideoList()
     } catch (error) {
       if (error !== 'cancel') {
         console.error('删除失败:', error)
+        ElMessage.error('删除失败')
       }
     }
   }
@@ -599,7 +569,7 @@
     editForm.id = 0
     editForm.title = ''
     editForm.description = ''
-    editForm.status = 'published'
+    editForm.status = 'published' as 'published' | 'draft' | 'processing'
   }
   
   const handleUpload = async () => {
@@ -614,28 +584,25 @@
       uploading.value = true
       uploadProgress.value = 0
       
-      // 模拟上传进度
-      const interval = setInterval(() => {
-        if (uploadProgress.value < 90) {
-          uploadProgress.value += Math.random() * 30
-        }
-      }, 200)
+      const uploadParams: UploadParams = {
+        title: uploadForm.title,
+        description: uploadForm.description,
+        status: uploadForm.status as 'published' | 'draft',
+        file: uploadForm.file
+      }
       
-      // 模拟上传API调用
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      await uploadVideoApi(uploadParams, (progress) => {
+        uploadProgress.value = progress
+      })
       
-      clearInterval(interval)
-      uploadProgress.value = 100
-      
-      setTimeout(() => {
-        showUploadDialog.value = false
-        uploadProgress.value = 0
-        ElMessage.success('上传成功')
-        resetUploadForm()
-        loadVideoList()
-      }, 500)
+      showUploadDialog.value = false
+      uploadProgress.value = 0
+      ElMessage.success('上传成功')
+      resetUploadForm()
+      loadVideoList()
     } catch (error) {
       console.error('上传失败:', error)
+      ElMessage.error('上传失败')
     } finally {
       uploading.value = false
     }
@@ -647,21 +614,19 @@
       
       editLoading.value = true
       
-      // 模拟编辑API调用
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // 更新本地数据
-      const index = videoList.value.findIndex(item => item.id === editForm.id)
-      if (index !== -1) {
-        videoList.value[index].name = editForm.title
-        videoList.value[index].description = editForm.description
-        videoList.value[index].status = editForm.status
-        videoList.value[index].updatedAt = new Date().toISOString()
+      const editParams: EditParams = {
+        id: editForm.id,
+        title: editForm.title,
+        description: editForm.description,
+        status: editForm.status
       }
+      
+      await editVideoApi(editParams)
       
       editDialogVisible.value = false
       ElMessage.success('保存成功')
       resetEditForm()
+      loadVideoList() // 重新加载列表获取最新数据
     } catch (error) {
       console.error('保存失败:', error)
       ElMessage.error('保存失败')
